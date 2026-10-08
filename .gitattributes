@@ -1,0 +1,7 @@
+Assets/SourceFiles/Textures/Repeating[[:space:]]Tiles/Moon_Normal.png filter=lfs diff=lfs merge=lfs -text
+Assets/Tutorials/Media/1.10[[:space:]]Play[[:space:]]Mode.webm filter=lfs diff=lfs merge=lfs -text
+Assets/Tutorials/Media/2.11[[:space:]]Turn[[:space:]]A[[:space:]]Cube[[:space:]]Into[[:space:]]Bridge.webm filter=lfs diff=lfs merge=lfs -text
+Assets/Tutorials/Media/2.9[[:space:]]Rotate[[:space:]]Stairs.webm filter=lfs diff=lfs merge=lfs -text
+Assets/Tutorials/Media/3.12[[:space:]]Reach[[:space:]]The[[:space:]]Final[[:space:]]Star.webm filter=lfs diff=lfs merge=lfs -text
+Assets/Tutorials/Media/3.3[[:space:]]Add[[:space:]]Moving[[:space:]]Platform.webm filter=lfs diff=lfs merge=lfs -text
+*.webm filter=lfs diff=lfs merge=lfs -text
