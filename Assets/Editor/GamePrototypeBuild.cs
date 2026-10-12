@@ -61,6 +61,7 @@ public static class GamePrototypeBuild
         var movement = player.AddComponent<PrototypeMovement>();
         var movementSettings = new SerializedObject(movement);
         movementSettings.FindProperty("movementCamera").objectReferenceValue = cameraObject.transform;
+        movementSettings.FindProperty("arenaFloor").objectReferenceValue = GameObject.Find("Arena Ground").GetComponent<Collider>();
         movementSettings.ApplyModifiedPropertiesWithoutUndo();
 
         var lightObject = new GameObject("Arena Light");
@@ -117,5 +118,18 @@ public static class GamePrototypeBuild
         Debug.Log("PROTOTYPE_BUILD_RESULT: " + report.summary.result + "; errors=" + report.summary.totalErrors
             + "; warnings=" + report.summary.totalWarnings + "; bytes=" + report.summary.totalSize);
         if (report.summary.result != BuildResult.Succeeded) throw new InvalidOperationException("Prototype build failed.");
+    }
+
+    // Update only the existing prototype with the new floor reference and control component.
+    public static void UpdateControlsAndBuild()
+    {
+        var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        var player = GameObject.Find("Prototype Player");
+        if (player.GetComponent<PrototypeControls>() == null) player.AddComponent<PrototypeControls>();
+        var settings = new SerializedObject(player.GetComponent<PrototypeMovement>());
+        settings.FindProperty("arenaFloor").objectReferenceValue = GameObject.Find("Arena Ground").GetComponent<Collider>();
+        settings.ApplyModifiedPropertiesWithoutUndo();
+        if (!EditorSceneManager.SaveScene(scene)) throw new InvalidOperationException("Scene save failed.");
+        Build();
     }
 }

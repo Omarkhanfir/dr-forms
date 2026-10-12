@@ -244,6 +244,7 @@ GameObject:
   - component: {fileID: 223351218}
   - component: {fileID: 223351217}
   - component: {fileID: 223351216}
+  - component: {fileID: 223351220}
   m_Layer: 0
   m_Name: Prototype Player
   m_TagString: Untagged
@@ -279,7 +280,9 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DrForms.Prototype.PrototypeMovement
   movementCamera: {fileID: 686893778}
+  arenaFloor: {fileID: 610080033}
   speed: 5
+  stopDistance: 0.12
 --- !u!143 &223351217
 CharacterController:
   m_ObjectHideFlags: 0
@@ -362,6 +365,18 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 223351214}
   m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &223351220
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 223351214}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6508a7362afa8b749add41bfc586ccd4, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DrForms.Prototype.PrototypeControls
 --- !u!1 &257905877
 GameObject:
   m_ObjectHideFlags: 0
