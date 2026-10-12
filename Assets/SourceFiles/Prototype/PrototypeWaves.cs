@@ -3,6 +3,8 @@ using UnityEngine;
 
 namespace DrForms.Prototype
 {
+    // Resolve clear/death after all combat updates; death wins a same-frame tie.
+    [DefaultExecutionOrder(100)]
     public sealed class PrototypeWaves : MonoBehaviour
     {
         [SerializeField] private PrototypeEnemy enemyTemplate;
@@ -16,6 +18,9 @@ namespace DrForms.Prototype
         private PrototypePlayerHealth player;
         private PrototypeControls controls;
         private float nextWaveTime;
+        private PrototypeQuestions questions;
+        private bool awaitingQuestion;
+        private static int completedWaves;
         public int WaveNumber { get; private set; }
         public int WaveCount => enemyCounts.Length;
         public bool Victory { get; private set; }
@@ -29,25 +34,43 @@ namespace DrForms.Prototype
         {
             player = GetComponent<PrototypePlayerHealth>();
             controls = GetComponent<PrototypeControls>();
+            questions = GetComponent<PrototypeQuestions>();
+            WaveNumber = completedWaves;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        public static void NewRun() => completedWaves = 0;
+
+        public void ContinueAfterReward()
+        {
+            if (!awaitingQuestion || questions.AnswerCount != WaveNumber || player.IsDefeated) return;
+            awaitingQuestion = false;
+            completedWaves = WaveNumber;
+            if (WaveNumber == WaveCount)
+            {
+                Victory = true;
+                Time.timeScale = 0;
+                controls.SetGameplayEnabled(false);
+                foreach (var projectile in FindObjectsByType<PrototypeProjectile>()) projectile.Cancel();
+                return;
+            }
+            OnBreak = true;
+            nextWaveTime = Time.time + breakSeconds;
+            controls.ResumeAfterQuestion();
         }
 
         private void Update()
         {
             if (player.IsDefeated || Victory || !controls.CanPlay) return;
-            if (WaveNumber == 0) { SpawnWave(); return; }
+            if (awaitingQuestion) return;
+            if (living.Count == 0 && WaveNumber == completedWaves && !OnBreak) { SpawnWave(); return; }
             living.RemoveAll(target => target == null || target.Health <= 0);
             if (living.Count > 0) return;
-            if (WaveNumber >= WaveCount)
-            {
-                Victory = true;
-                controls.SetGameplayEnabled(false);
-                foreach (var projectile in FindObjectsByType<PrototypeProjectile>()) projectile.Cancel();
-                return;
-            }
             if (!OnBreak)
             {
-                OnBreak = true;
-                nextWaveTime = Time.time + breakSeconds;
+                awaitingQuestion = true;
+                questions.OpenForWave(WaveNumber);
+                return;
             }
             if (Time.time >= nextWaveTime) SpawnWave();
         }

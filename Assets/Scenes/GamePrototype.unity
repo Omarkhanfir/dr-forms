@@ -441,7 +441,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6ee8cad22147114a87c6e239aec2fbb, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DrForms.Prototype.PrototypeQuestions
-  intervalSeconds: 10
+  inputGuardSeconds: 0.5
   damageUpgrade: 10
   equalRewards: 1
   incorrectDamageUpgrade: 5

@@ -20,6 +20,7 @@ namespace DrForms.Prototype
             DamageApplications++;
             Health = Mathf.Max(0, Health - damage);
             if (!IsDefeated) return;
+            Time.timeScale = 0;
             GetComponent<PrototypeControls>().SetGameplayEnabled(false);
             // Discard shots at defeat rather than allowing damage behind the defeat screen.
             foreach (var projectile in FindObjectsByType<PrototypeProjectile>()) projectile.Cancel();
@@ -32,6 +33,7 @@ namespace DrForms.Prototype
             restarting = true;
             if (waves != null && waves.Victory) PrototypeQuestions.NewAssessment();
             PrototypeControls.PrepareRestart();
+            Time.timeScale = 1;
             // Reload restores destroyed enemies/targets as well as every transient effect and input owner.
 #if UNITY_EDITOR
             // The prototype intentionally is not part of the project's default build scene list.

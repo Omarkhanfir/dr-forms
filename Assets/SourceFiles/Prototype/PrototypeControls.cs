@@ -50,6 +50,8 @@ namespace DrForms.Prototype
         private bool pointerReady, showedAttack;
         private Vector2 lastPointer;
         private Rect lastSafeArea;
+        private bool focusClockPaused;
+        private float scaleBeforeFocusLoss;
 
         private void Awake()
         {
@@ -69,6 +71,17 @@ namespace DrForms.Prototype
 
         public void PrepareInput()
         {
+            if (!HasFocus && !focusClockPaused)
+            {
+                scaleBeforeFocusLoss = Time.timeScale;
+                Time.timeScale = 0;
+                focusClockPaused = true;
+            }
+            else if (HasFocus && focusClockPaused)
+            {
+                Time.timeScale = scaleBeforeFocusLoss;
+                focusClockPaused = false;
+            }
             if (waitingForRelease && !AnyPointerPressed())
             {
                 waitingForRelease = false;
@@ -81,12 +94,16 @@ namespace DrForms.Prototype
                 healthFill.rectTransform.anchorMax = new Vector2((float)playerHealth.Health / playerHealth.MaximumHealth, 1);
                 defeatPanel.gameObject.SetActive(playerHealth.IsDefeated || (waves != null && waves.Victory));
                 endTitle.text = playerHealth.IsDefeated ? "DEFEATED" : "VICTORY";
+                restartButton.GetComponentInChildren<Text>().text = playerHealth.IsDefeated ? "Retry" : "New Run";
                 waveLabel.text = waves == null ? "" : "Wave " + waves.WaveNumber + " / " + waves.WaveCount
                     + (waves.OnBreak ? " — Next wave in " + Mathf.CeilToInt(waves.BreakRemaining) + "s" : "");
             }
             if (!HasFocus || epoch != PrototypeBrowserInput.Epoch)
             {
                 Suspend();
+                waitingForRelease = true;
+                requireFreshPointer = true;
+                lastPointer = Mouse.current != null ? Mouse.current.position.ReadValue() : Vector2.zero;
                 epoch = PrototypeBrowserInput.Epoch;
             }
             if (lastSafeArea != Screen.safeArea) UpdateSafeArea();
@@ -159,10 +176,11 @@ namespace DrForms.Prototype
             if (!enabled) Suspend();
         }
 
-        private static bool AnyPointerPressed()
+        public static bool AnyPointerPressed()
         {
             if (Mouse.current != null && (Mouse.current.leftButton.isPressed || Mouse.current.rightButton.isPressed
-                || Mouse.current.middleButton.isPressed)) return true;
+                || Mouse.current.middleButton.isPressed || Mouse.current.backButton.isPressed
+                || Mouse.current.forwardButton.isPressed)) return true;
             if (Touchscreen.current != null)
                 foreach (var touch in Touchscreen.current.touches)
                     if (touch.press.isPressed) return true;
