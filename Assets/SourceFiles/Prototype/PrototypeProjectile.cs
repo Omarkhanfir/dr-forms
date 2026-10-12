@@ -45,6 +45,7 @@ namespace DrForms.Prototype
             if (owner != null) owner.HitApplied();
             Destroy(gameObject);
         }
+        public void Cancel() => Finish();
         private void Finish() { finished = true; Destroy(gameObject); }
         private void OnDestroy() { if (owner != null) owner.ProjectileFinished(); }
     }

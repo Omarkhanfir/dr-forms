@@ -41,6 +41,12 @@ namespace DrForms.Prototype
         private void Update()
         {
             controls.PrepareInput();
+            if (!controls.GameplayEnabled)
+            {
+                hasDestination = false;
+                SetAttackVisual(false);
+                return;
+            }
             var horizontal = controls.TouchMode ? TouchVelocity() : PointerVelocity();
             if (controller.isGrounded && verticalSpeed < 0) verticalSpeed = -2;
             verticalSpeed += Physics.gravity.y * Time.deltaTime;
@@ -119,8 +125,27 @@ namespace DrForms.Prototype
         {
             var combat = GetComponent<PrototypeCombat>();
             var target = FindAnyObjectByType<PrototypeTarget>();
+            var enemy = FindAnyObjectByType<PrototypeEnemy>();
+            var playerHealth = GetComponent<PrototypePlayerHealth>();
             Debug.Log("PROTOTYPE_STATE:" + JsonUtility.ToJson(new VerificationState
             {
+                playerHealth = playerHealth != null ? playerHealth.Health : 0,
+                playerDamageApplications = playerHealth != null ? playerHealth.DamageApplications : 0,
+                defeated = playerHealth != null && playerHealth.IsDefeated,
+                defeatVisible = controls.DefeatVisible,
+                waitingForRelease = controls.WaitingForRelease,
+                restartCenter = controls.RestartCenter,
+                enemyAlive = enemy != null,
+                enemyCount = FindObjectsByType<PrototypeEnemy>().Length,
+                targetCount = FindObjectsByType<PrototypeTarget>().Length,
+                enemyPosition = enemy != null ? enemy.transform.position : Vector3.zero,
+                enemyHealth = enemy != null ? enemy.GetComponent<PrototypeTarget>().Health : 0,
+                enemyHits = enemy != null ? enemy.ContactHits : 0,
+                contactDamage = enemy != null ? enemy.ContactDamage : 0,
+                contactCooldown = enemy != null ? enemy.ContactCooldown : 0,
+                contactDistance = enemy != null ? enemy.ContactDistance : 0,
+                lastContactTime = enemy != null ? enemy.LastContactTime : 0,
+                previousContactTime = enemy != null ? enemy.PreviousContactTime : 0,
                 shotsFired = combat != null ? combat.ShotsFired : 0,
                 projectiles = combat != null ? combat.ActiveProjectiles : 0,
                 damage = combat != null ? combat.Damage : 0,
@@ -163,6 +188,11 @@ namespace DrForms.Prototype
         [System.Serializable]
         private struct VerificationState
         {
+            public int playerHealth, playerDamageApplications, enemyHealth, enemyHits, contactDamage, enemyCount, targetCount;
+            public bool defeated, defeatVisible, waitingForRelease, enemyAlive;
+            public Vector2 restartCenter;
+            public Vector3 enemyPosition;
+            public float contactCooldown, contactDistance, lastContactTime, previousContactTime;
             public int shotsFired, projectiles, damage, targetHealth;
             public float range, cooldown, projectileSpeed, lastShotTime, previousShotTime, healthFill;
             public int hitsApplied, damageApplications, effects, trails;

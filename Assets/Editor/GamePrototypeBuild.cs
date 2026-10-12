@@ -120,6 +120,40 @@ public static class GamePrototypeBuild
         if (report.summary.result != BuildResult.Succeeded) throw new InvalidOperationException("Prototype build failed.");
     }
 
+    public static void AddEnemyAndBuild()
+    {
+        var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        var player = GameObject.Find("Prototype Player");
+        var health = player.GetComponent<PrototypePlayerHealth>();
+        if (health == null) health = player.AddComponent<PrototypePlayerHealth>();
+        if (UnityEngine.Object.FindAnyObjectByType<PrototypeEnemy>() == null)
+        {
+            var enemy = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            enemy.name = "Prototype Enemy";
+            enemy.transform.position = new Vector3(-4, 1, -4);
+            // Reuse the existing capsule mesh with controller dimensions in world units.
+            enemy.transform.localScale = Vector3.one;
+            enemy.GetComponent<MeshFilter>().sharedMesh = player.GetComponent<MeshFilter>().sharedMesh;
+            UnityEngine.Object.DestroyImmediate(enemy.GetComponent<Collider>());
+            var controller = enemy.AddComponent<CharacterController>();
+            controller.height = 2;
+            controller.radius = 0.5f;
+            controller.skinWidth = 0.03f;
+            controller.stepOffset = 0.2f;
+            enemy.GetComponent<Renderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/GamePrototypeWall.mat");
+            var target = enemy.AddComponent<PrototypeTarget>();
+            var targetSettings = new SerializedObject(target);
+            targetSettings.FindProperty("displayName").stringValue = "Enemy";
+            targetSettings.ApplyModifiedPropertiesWithoutUndo();
+            var chase = enemy.AddComponent<PrototypeEnemy>();
+            var settings = new SerializedObject(chase);
+            settings.FindProperty("player").objectReferenceValue = health;
+            settings.ApplyModifiedPropertiesWithoutUndo();
+        }
+        if (!EditorSceneManager.SaveScene(scene)) throw new InvalidOperationException("Scene save failed.");
+        Build();
+    }
+
     public static void AddCombatAndBuild()
     {
         var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);

@@ -13,14 +13,14 @@ namespace DrForms.Prototype
 
         public void OnPointerDown(PointerEventData data)
         {
-            if (!Owner.TouchMode || !Owner.HasFocus || pointerId.HasValue) return;
+            if (!Owner.TouchMode || !Owner.CanPlay || pointerId.HasValue) return;
             pointerId = data.pointerId;
             SetPosition(data);
         }
 
         public void OnDrag(PointerEventData data)
         {
-            if (pointerId != data.pointerId || !Owner.HasFocus) return;
+            if (pointerId != data.pointerId || !Owner.CanPlay) return;
             if (data.position.x < 0 || data.position.y < 0
                 || data.position.x >= Screen.width || data.position.y >= Screen.height)
             {

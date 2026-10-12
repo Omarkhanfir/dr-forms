@@ -10,10 +10,22 @@ namespace DrForms.Prototype
     public sealed class PrototypeControls : MonoBehaviour
     {
         public bool TouchMode { get; private set; }
+        public bool GameplayEnabled { get; private set; } = true;
+        public bool CanPlay => GameplayEnabled && HasFocus && !waitingForRelease && Time.frameCount > inputResumeFrame;
+        public bool WaitingForRelease => waitingForRelease;
+        public bool DefeatVisible => defeatPanel != null && defeatPanel.gameObject.activeSelf;
+        public Vector2 RestartCenter => RectTransformUtility.WorldToScreenPoint(null, restartButton.position);
+        private static bool restartPending;
+        private bool waitingForRelease, requireFreshPointer;
+        private int inputResumeFrame = -1;
+        private RectTransform defeatPanel, restartButton;
+        private Text healthLabel;
+        private Image healthFill;
+        private PrototypePlayerHealth playerHealth;
         public bool HasFocus => Application.isFocused && PrototypeBrowserInput.Focused;
         public bool AttackActive => Time.unscaledTime < attackUntil;
         public int AttackCount { get; private set; }
-        public Vector2 JoystickValue => HasFocus ? joystick.Value : Vector2.zero;
+        public Vector2 JoystickValue => CanPlay ? joystick.Value : Vector2.zero;
         public Vector2 JoystickCenter => RectTransformUtility.WorldToScreenPoint(null, joystick.transform.position);
         public Vector2 AttackCenter => RectTransformUtility.WorldToScreenPoint(null, attackButton.position);
         public Vector2 HudCenter => RectTransformUtility.WorldToScreenPoint(null, hud.position);
@@ -40,6 +52,11 @@ namespace DrForms.Prototype
             PrototypeBrowserInput.Initialize();
             TouchMode = PrototypeBrowserInput.TouchMode;
             epoch = PrototypeBrowserInput.Epoch;
+            playerHealth = GetComponent<PrototypePlayerHealth>();
+            waitingForRelease = restartPending;
+            requireFreshPointer = restartPending;
+            restartPending = false;
+            lastPointer = Mouse.current != null ? Mouse.current.position.ReadValue() : Vector2.zero;
             CreateUI();
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -47,6 +64,18 @@ namespace DrForms.Prototype
 
         public void PrepareInput()
         {
+            if (waitingForRelease && !AnyPointerPressed())
+            {
+                waitingForRelease = false;
+                // Ignore the reload frame's release/click before accepting fresh input.
+                inputResumeFrame = Time.frameCount;
+            }
+            if (playerHealth != null)
+            {
+                healthLabel.text = "Health " + playerHealth.Health + " / " + playerHealth.MaximumHealth;
+                healthFill.rectTransform.anchorMax = new Vector2((float)playerHealth.Health / playerHealth.MaximumHealth, 1);
+                defeatPanel.gameObject.SetActive(playerHealth.IsDefeated);
+            }
             if (!HasFocus || epoch != PrototypeBrowserInput.Epoch)
             {
                 Suspend();
@@ -63,12 +92,17 @@ namespace DrForms.Prototype
         {
             position = Mouse.current != null ? Mouse.current.position.ReadValue() : Vector2.zero;
             changed = false;
-            if (TouchMode || !HasFocus || Mouse.current == null || !PrototypeBrowserInput.Inside
+            if (TouchMode || !CanPlay || Mouse.current == null || !PrototypeBrowserInput.Inside
                 || position.x < 0 || position.y < 0 || position.x >= Screen.width || position.y >= Screen.height
                 || IsOverUI(position))
             {
                 pointerReady = false;
                 return false;
+            }
+            if (requireFreshPointer)
+            {
+                if ((position - lastPointer).sqrMagnitude < 9 && !Mouse.current.leftButton.wasPressedThisFrame) return false;
+                requireFreshPointer = false;
             }
             // Browser pixel rounding can turn subpixel noise into a one-pixel event.
             changed = !pointerReady || (position - lastPointer).sqrMagnitude >= 9;
@@ -89,11 +123,29 @@ namespace DrForms.Prototype
 
         public void RequestAttack()
         {
-            if (!HasFocus) return;
+            if (!CanPlay) return;
             var combat = GetComponent<PrototypeCombat>();
             if (combat == null || !combat.TryAttack()) return;
             AttackCount++;
             attackUntil = Time.unscaledTime + 0.25f;
+        }
+
+        public static void PrepareRestart() => restartPending = true;
+
+        public void SetGameplayEnabled(bool enabled)
+        {
+            GameplayEnabled = enabled;
+            if (!enabled) Suspend();
+        }
+
+        private static bool AnyPointerPressed()
+        {
+            if (Mouse.current != null && (Mouse.current.leftButton.isPressed || Mouse.current.rightButton.isPressed
+                || Mouse.current.middleButton.isPressed)) return true;
+            if (Touchscreen.current != null)
+                foreach (var touch in Touchscreen.current.touches)
+                    if (touch.press.isPressed) return true;
+            return false;
         }
 
         public void Suspend()
@@ -167,6 +219,31 @@ namespace DrForms.Prototype
             attackButton.gameObject.AddComponent<PrototypeAttackButton>().Owner = this;
             pad.gameObject.SetActive(TouchMode);
             attackButton.gameObject.SetActive(TouchMode);
+            CreateHealthAndDefeatUI();
+        }
+
+        private void CreateHealthAndDefeatUI()
+        {
+            var healthBar = Rect("Player Health", safeArea, new Vector2(0.5f, 1), new Vector2(0.5f, 1),
+                new Vector2(0, -105), new Vector2(280, 30));
+            healthBar.gameObject.AddComponent<Image>().color = new Color(0.15f, 0.05f, 0.07f, 0.95f);
+            var fillRect = Rect("Player Health Fill", healthBar, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            healthFill = fillRect.gameObject.AddComponent<Image>();
+            healthFill.color = new Color(0.15f, 0.6f, 0.3f);
+            healthFill.raycastTarget = false;
+            healthLabel = Label("Player Health Text", healthBar, "Health", 20);
+
+            defeatPanel = Rect("Defeat Screen", safeArea, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            defeatPanel.gameObject.AddComponent<Image>().color = new Color(0.02f, 0.04f, 0.08f, 0.94f);
+            var title = Rect("Defeat Title", defeatPanel, Vector2.one * 0.5f, Vector2.one * 0.5f,
+                new Vector2(0, 55), new Vector2(280, 70));
+            Label("Defeat Text", title, "DEFEATED", 34);
+            restartButton = Rect("Restart", defeatPanel, Vector2.one * 0.5f, Vector2.one * 0.5f,
+                new Vector2(0, -35), new Vector2(240, 64));
+            restartButton.gameObject.AddComponent<Image>().color = new Color(0.1f, 0.5f, 0.4f);
+            Label("Restart Text", restartButton, "RESTART", 26);
+            restartButton.gameObject.AddComponent<Button>().onClick.AddListener(() => playerHealth?.Restart());
+            defeatPanel.gameObject.SetActive(false);
         }
 
         private void UpdateSafeArea()

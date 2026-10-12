@@ -23,6 +23,9 @@ namespace DrForms.Prototype
 
         public bool TryAttack()
         {
+            var health = GetComponent<PrototypePlayerHealth>();
+            if (health != null && health.IsDefeated) return false;
+            if (!GetComponent<PrototypeControls>().CanPlay) return false;
             if (Time.time < nextAttack) return false;
             PrototypeTarget nearest = null;
             var nearestDistance = range * range;

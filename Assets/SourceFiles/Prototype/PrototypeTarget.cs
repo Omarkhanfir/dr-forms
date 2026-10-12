@@ -6,6 +6,7 @@ namespace DrForms.Prototype
     public sealed class PrototypeTarget : MonoBehaviour
     {
         [SerializeField, Min(1)] private int maximumHealth = 100;
+        [SerializeField] private string displayName = "Target";
         public int Health { get; private set; }
         private Text label;
         private Image fill;
@@ -80,7 +81,7 @@ namespace DrForms.Prototype
         }
         private void RefreshHealth()
         {
-            label.text = "Target " + Health + " / " + maximumHealth;
+            label.text = displayName + " " + Health + " / " + maximumHealth;
 
         }
     }
