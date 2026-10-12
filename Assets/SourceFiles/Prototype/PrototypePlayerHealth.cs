@@ -30,6 +30,7 @@ namespace DrForms.Prototype
             var waves = GetComponent<PrototypeWaves>();
             if ((!IsDefeated && (waves == null || !waves.Victory)) || restarting) return;
             restarting = true;
+            if (waves != null && waves.Victory) PrototypeQuestions.NewAssessment();
             PrototypeControls.PrepareRestart();
             // Reload restores destroyed enemies/targets as well as every transient effect and input owner.
 #if UNITY_EDITOR

@@ -248,6 +248,7 @@ GameObject:
   - component: {fileID: 223351221}
   - component: {fileID: 223351222}
   - component: {fileID: 223351223}
+  - component: {fileID: 223351224}
   m_Layer: 0
   m_Name: Prototype Player
   m_TagString: Untagged
@@ -428,6 +429,22 @@ MonoBehaviour:
   arenaMinimum: {x: -10, y: -10}
   arenaMaximum: {x: 10, y: 10}
   boundaryMargin: 1
+--- !u!114 &223351224
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 223351214}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6ee8cad22147114a87c6e239aec2fbb, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DrForms.Prototype.PrototypeQuestions
+  intervalSeconds: 10
+  damageUpgrade: 10
+  equalRewards: 1
+  incorrectDamageUpgrade: 5
 --- !u!1 &257905877
 GameObject:
   m_ObjectHideFlags: 0

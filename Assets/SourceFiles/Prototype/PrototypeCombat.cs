@@ -13,6 +13,7 @@ namespace DrForms.Prototype
         public int ShotsFired { get; private set; }
         public int ActiveProjectiles { get; private set; }
         public int Damage => damage;
+        public float CooldownRemaining => Mathf.Max(0, nextAttack - Time.time);
         public float Range => range;
         public float Cooldown => cooldown;
         public float ProjectileSpeed => projectileSpeed;
@@ -58,6 +59,8 @@ namespace DrForms.Prototype
             shot.AddComponent<PrototypeProjectile>().Initialize(this, nearest, damage, projectileSpeed);
             return true;
         }
+
+        public void AddDamage(int upgrade) => damage += Mathf.Max(0, upgrade);
 
         internal void HitApplied() => HitsApplied++;
 

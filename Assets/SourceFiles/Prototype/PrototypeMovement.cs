@@ -128,8 +128,14 @@ namespace DrForms.Prototype
             var enemy = FindAnyObjectByType<PrototypeEnemy>();
             var playerHealth = GetComponent<PrototypePlayerHealth>();
             var waves = GetComponent<PrototypeWaves>();
+            var questions = GetComponent<PrototypeQuestions>();
             Debug.Log("PROTOTYPE_STATE:" + JsonUtility.ToJson(new VerificationState
             {
+                questionPaused = questions != null && questions.Paused,
+                answers = questions != null ? questions.Answers : new int[0],
+                questionActiveSeconds = questions != null ? questions.ActiveSeconds : 0,
+                answerCenters = questions != null ? questions.OptionCenters : new Vector2[0],
+                projectilePositions = System.Array.ConvertAll(FindObjectsByType<PrototypeProjectile>(), shot => shot.transform.position),
                 playerHealth = playerHealth != null ? playerHealth.Health : 0,
                 wave = waves != null ? waves.WaveNumber : 0,
                 victory = waves != null && waves.Victory,
@@ -169,6 +175,7 @@ namespace DrForms.Prototype
                 effects = FindObjectsByType<PrototypeCombatEffect>().Length,
                 trails = FindObjectsByType<TrailRenderer>().Length,
                 range = combat != null ? combat.Range : 0,
+                cooldownRemaining = combat != null ? combat.CooldownRemaining : 0,
                 cooldown = combat != null ? combat.Cooldown : 0,
                 targetHealth = target != null ? target.Health : 0,
                 targetAlive = target != null,
@@ -197,6 +204,11 @@ namespace DrForms.Prototype
         [System.Serializable]
         private struct VerificationState
         {
+            public bool questionPaused;
+            public int[] answers;
+            public float questionActiveSeconds;
+            public Vector2[] answerCenters;
+            public Vector3[] projectilePositions;
             public int wave;
             public bool victory, victoryVisible, onBreak;
             public float breakRemaining, safePlayerDistance;
@@ -208,6 +220,7 @@ namespace DrForms.Prototype
             public Vector3 enemyPosition;
             public float contactCooldown, contactDistance, lastContactTime, previousContactTime;
             public int shotsFired, projectiles, damage, targetHealth;
+            public float cooldownRemaining;
             public float range, cooldown, projectileSpeed, lastShotTime, previousShotTime, healthFill;
             public int hitsApplied, damageApplications, effects, trails;
             public bool muzzleActive, hitFlash;

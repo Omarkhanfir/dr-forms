@@ -9,6 +9,7 @@ namespace DrForms.Prototype
 {
     public sealed class PrototypeControls : MonoBehaviour
     {
+        public RectTransform UIRoot => safeArea;
         public bool TouchMode { get; private set; }
         public bool GameplayEnabled { get; private set; } = true;
         public bool CanPlay => GameplayEnabled && HasFocus && !waitingForRelease && Time.frameCount > inputResumeFrame;
@@ -19,7 +20,7 @@ namespace DrForms.Prototype
         private Text waveLabel, endTitle;
         public Vector2 RestartCenter => RectTransformUtility.WorldToScreenPoint(null, restartButton.position);
         private static bool restartPending;
-        private bool waitingForRelease, requireFreshPointer;
+        private bool waitingForRelease, requireFreshPointer, questionPointerMustMove;
         private int inputResumeFrame = -1;
         private RectTransform defeatPanel, restartButton;
         private Text healthLabel;
@@ -108,7 +109,9 @@ namespace DrForms.Prototype
             }
             if (requireFreshPointer)
             {
-                if ((position - lastPointer).sqrMagnitude < 9 && !Mouse.current.leftButton.wasPressedThisFrame) return false;
+                if ((position - lastPointer).sqrMagnitude < 9
+                    && (questionPointerMustMove || !Mouse.current.leftButton.wasPressedThisFrame)) return false;
+                questionPointerMustMove = false;
                 requireFreshPointer = false;
             }
             // Browser pixel rounding can turn subpixel noise into a one-pixel event.
@@ -135,6 +138,17 @@ namespace DrForms.Prototype
             if (combat == null || !combat.TryAttack()) return;
             AttackCount++;
             attackUntil = Time.unscaledTime + 0.25f;
+        }
+
+        public void ResumeAfterQuestion()
+        {
+            Suspend();
+            waitingForRelease = true;
+            requireFreshPointer = true;
+            questionPointerMustMove = true;
+            lastPointer = Mouse.current != null ? Mouse.current.position.ReadValue() : Vector2.zero;
+            inputResumeFrame = Time.frameCount;
+            GameplayEnabled = true;
         }
 
         public static void PrepareRestart() => restartPending = true;
@@ -263,7 +277,7 @@ namespace DrForms.Prototype
             safeArea.anchorMax = new Vector2(lastSafeArea.xMax / Screen.width, lastSafeArea.yMax / Screen.height);
         }
 
-        private static RectTransform Rect(string name, Transform parent, Vector2 min, Vector2 max,
+        internal static RectTransform Rect(string name, Transform parent, Vector2 min, Vector2 max,
             Vector2 position, Vector2 size)
         {
             var rect = new GameObject(name, typeof(RectTransform)).GetComponent<RectTransform>();
@@ -275,7 +289,7 @@ namespace DrForms.Prototype
             return rect;
         }
 
-        private static Text Label(string name, RectTransform parent, string text, int fontSize)
+        internal static Text Label(string name, RectTransform parent, string text, int fontSize)
         {
             var label = Rect(name, parent, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero).gameObject.AddComponent<Text>();
             label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");

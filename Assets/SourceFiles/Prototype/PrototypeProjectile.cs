@@ -31,7 +31,7 @@ namespace DrForms.Prototype
         }
         private void Update()
         {
-            if (finished) return;
+            if (finished || Time.timeScale == 0) return;
             if (target == null || target.Health <= 0 || Time.time >= expires)
             {
                 Finish();

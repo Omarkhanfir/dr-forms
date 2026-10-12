@@ -120,6 +120,15 @@ public static class GamePrototypeBuild
         if (report.summary.result != BuildResult.Succeeded) throw new InvalidOperationException("Prototype build failed.");
     }
 
+    public static void AddQuestionsAndBuild()
+    {
+        var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        var player = GameObject.Find("Prototype Player");
+        if (player.GetComponent<PrototypeQuestions>() == null) player.AddComponent<PrototypeQuestions>();
+        if (!EditorSceneManager.SaveScene(scene)) throw new InvalidOperationException("Scene save failed.");
+        Build();
+    }
+
     public static void AddWavesAndBuild()
     {
         var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
