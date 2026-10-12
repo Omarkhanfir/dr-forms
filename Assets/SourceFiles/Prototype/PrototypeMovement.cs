@@ -127,9 +127,18 @@ namespace DrForms.Prototype
             var target = FindAnyObjectByType<PrototypeTarget>();
             var enemy = FindAnyObjectByType<PrototypeEnemy>();
             var playerHealth = GetComponent<PrototypePlayerHealth>();
+            var waves = GetComponent<PrototypeWaves>();
             Debug.Log("PROTOTYPE_STATE:" + JsonUtility.ToJson(new VerificationState
             {
                 playerHealth = playerHealth != null ? playerHealth.Health : 0,
+                wave = waves != null ? waves.WaveNumber : 0,
+                victory = waves != null && waves.Victory,
+                victoryVisible = controls.VictoryVisible,
+                onBreak = waves != null && waves.OnBreak,
+                breakRemaining = waves != null ? waves.BreakRemaining : 0,
+                spawns = waves != null ? waves.LastSpawns : new Vector3[0],
+                spawnPlayerPosition = waves != null ? waves.SpawnPlayerPosition : Vector3.zero,
+                safePlayerDistance = waves != null ? waves.SafePlayerDistance : 0,
                 playerDamageApplications = playerHealth != null ? playerHealth.DamageApplications : 0,
                 defeated = playerHealth != null && playerHealth.IsDefeated,
                 defeatVisible = controls.DefeatVisible,
@@ -188,6 +197,11 @@ namespace DrForms.Prototype
         [System.Serializable]
         private struct VerificationState
         {
+            public int wave;
+            public bool victory, victoryVisible, onBreak;
+            public float breakRemaining, safePlayerDistance;
+            public Vector3[] spawns;
+            public Vector3 spawnPlayerPosition;
             public int playerHealth, playerDamageApplications, enemyHealth, enemyHits, contactDamage, enemyCount, targetCount;
             public bool defeated, defeatVisible, waitingForRelease, enemyAlive;
             public Vector2 restartCenter;

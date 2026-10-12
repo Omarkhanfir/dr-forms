@@ -14,6 +14,9 @@ namespace DrForms.Prototype
         public bool CanPlay => GameplayEnabled && HasFocus && !waitingForRelease && Time.frameCount > inputResumeFrame;
         public bool WaitingForRelease => waitingForRelease;
         public bool DefeatVisible => defeatPanel != null && defeatPanel.gameObject.activeSelf;
+        public bool VictoryVisible => DefeatVisible && waves != null && waves.Victory;
+        private PrototypeWaves waves;
+        private Text waveLabel, endTitle;
         public Vector2 RestartCenter => RectTransformUtility.WorldToScreenPoint(null, restartButton.position);
         private static bool restartPending;
         private bool waitingForRelease, requireFreshPointer;
@@ -53,6 +56,7 @@ namespace DrForms.Prototype
             TouchMode = PrototypeBrowserInput.TouchMode;
             epoch = PrototypeBrowserInput.Epoch;
             playerHealth = GetComponent<PrototypePlayerHealth>();
+            waves = GetComponent<PrototypeWaves>();
             waitingForRelease = restartPending;
             requireFreshPointer = restartPending;
             restartPending = false;
@@ -74,7 +78,10 @@ namespace DrForms.Prototype
             {
                 healthLabel.text = "Health " + playerHealth.Health + " / " + playerHealth.MaximumHealth;
                 healthFill.rectTransform.anchorMax = new Vector2((float)playerHealth.Health / playerHealth.MaximumHealth, 1);
-                defeatPanel.gameObject.SetActive(playerHealth.IsDefeated);
+                defeatPanel.gameObject.SetActive(playerHealth.IsDefeated || (waves != null && waves.Victory));
+                endTitle.text = playerHealth.IsDefeated ? "DEFEATED" : "VICTORY";
+                waveLabel.text = waves == null ? "" : "Wave " + waves.WaveNumber + " / " + waves.WaveCount
+                    + (waves.OnBreak ? " — Next wave in " + Mathf.CeilToInt(waves.BreakRemaining) + "s" : "");
             }
             if (!HasFocus || epoch != PrototypeBrowserInput.Epoch)
             {
@@ -232,12 +239,15 @@ namespace DrForms.Prototype
             healthFill.color = new Color(0.15f, 0.6f, 0.3f);
             healthFill.raycastTarget = false;
             healthLabel = Label("Player Health Text", healthBar, "Health", 20);
+            var waveBar = Rect("Wave Status", safeArea, new Vector2(0.5f, 1), new Vector2(0.5f, 1),
+                new Vector2(0, -140), new Vector2(440, 30));
+            waveLabel = Label("Wave Text", waveBar, "Wave 1 / 3", 20);
 
             defeatPanel = Rect("Defeat Screen", safeArea, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             defeatPanel.gameObject.AddComponent<Image>().color = new Color(0.02f, 0.04f, 0.08f, 0.94f);
             var title = Rect("Defeat Title", defeatPanel, Vector2.one * 0.5f, Vector2.one * 0.5f,
                 new Vector2(0, 55), new Vector2(280, 70));
-            Label("Defeat Text", title, "DEFEATED", 34);
+            endTitle = Label("Defeat Text", title, "DEFEATED", 34);
             restartButton = Rect("Restart", defeatPanel, Vector2.one * 0.5f, Vector2.one * 0.5f,
                 new Vector2(0, -35), new Vector2(240, 64));
             restartButton.gameObject.AddComponent<Image>().color = new Color(0.1f, 0.5f, 0.4f);

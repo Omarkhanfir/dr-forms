@@ -247,6 +247,7 @@ GameObject:
   - component: {fileID: 223351220}
   - component: {fileID: 223351221}
   - component: {fileID: 223351222}
+  - component: {fileID: 223351223}
   m_Layer: 0
   m_Name: Prototype Player
   m_TagString: Untagged
@@ -408,6 +409,25 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DrForms.Prototype.PrototypePlayerHealth
   maximumHealth: 100
+--- !u!114 &223351223
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 223351214}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d8f6be727110684db652dd09a4d1a57, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DrForms.Prototype.PrototypeWaves
+  enemyTemplate: {fileID: 1511230792}
+  enemyCounts: 020000000300000004000000i
+  breakSeconds: 3
+  safePlayerDistance: 5
+  arenaMinimum: {x: -10, y: -10}
+  arenaMaximum: {x: 10, y: 10}
+  boundaryMargin: 1
 --- !u!1 &257905877
 GameObject:
   m_ObjectHideFlags: 0
@@ -1156,7 +1176,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1511230792
 MonoBehaviour:
   m_ObjectHideFlags: 0

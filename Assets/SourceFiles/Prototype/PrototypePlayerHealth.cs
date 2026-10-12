@@ -27,7 +27,8 @@ namespace DrForms.Prototype
 
         public void Restart()
         {
-            if (!IsDefeated || restarting) return;
+            var waves = GetComponent<PrototypeWaves>();
+            if ((!IsDefeated && (waves == null || !waves.Victory)) || restarting) return;
             restarting = true;
             PrototypeControls.PrepareRestart();
             // Reload restores destroyed enemies/targets as well as every transient effect and input owner.

@@ -120,6 +120,22 @@ public static class GamePrototypeBuild
         if (report.summary.result != BuildResult.Succeeded) throw new InvalidOperationException("Prototype build failed.");
     }
 
+    public static void AddWavesAndBuild()
+    {
+        var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        var player = GameObject.Find("Prototype Player");
+        var waves = player.GetComponent<PrototypeWaves>();
+        if (waves == null) waves = player.AddComponent<PrototypeWaves>();
+        var template = UnityEngine.Object.FindAnyObjectByType<PrototypeEnemy>(FindObjectsInactive.Include);
+        if (template == null) throw new InvalidOperationException("Enemy template missing.");
+        template.gameObject.SetActive(false);
+        var settings = new SerializedObject(waves);
+        settings.FindProperty("enemyTemplate").objectReferenceValue = template;
+        settings.ApplyModifiedPropertiesWithoutUndo();
+        if (!EditorSceneManager.SaveScene(scene)) throw new InvalidOperationException("Scene save failed.");
+        Build();
+    }
+
     public static void AddEnemyAndBuild()
     {
         var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
