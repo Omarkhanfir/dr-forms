@@ -124,6 +124,16 @@ namespace DrForms.Prototype
                 shotsFired = combat != null ? combat.ShotsFired : 0,
                 projectiles = combat != null ? combat.ActiveProjectiles : 0,
                 damage = combat != null ? combat.Damage : 0,
+                projectileSpeed = combat != null ? combat.ProjectileSpeed : 0,
+                hitsApplied = combat != null ? combat.HitsApplied : 0,
+                lastShotTime = combat != null ? combat.LastShotTime : 0,
+                previousShotTime = combat != null ? combat.PreviousShotTime : 0,
+                muzzleActive = combat != null && combat.MuzzleActive,
+                hitFlash = target != null && target.HitFlashActive,
+                healthFill = target != null ? target.DisplayedHealthFraction : 0,
+                damageApplications = target != null ? target.DamageApplications : 0,
+                effects = FindObjectsByType<PrototypeCombatEffect>().Length,
+                trails = FindObjectsByType<TrailRenderer>().Length,
                 range = combat != null ? combat.Range : 0,
                 cooldown = combat != null ? combat.Cooldown : 0,
                 targetHealth = target != null ? target.Health : 0,
@@ -154,7 +164,9 @@ namespace DrForms.Prototype
         private struct VerificationState
         {
             public int shotsFired, projectiles, damage, targetHealth;
-            public float range, cooldown;
+            public float range, cooldown, projectileSpeed, lastShotTime, previousShotTime, healthFill;
+            public int hitsApplied, damageApplications, effects, trails;
+            public bool muzzleActive, hitFlash;
             public bool targetAlive;
             public Vector3 targetScreen;
             public Vector3 position, destination, camera, forward, playerFloorScreen, eastFloorScreen;

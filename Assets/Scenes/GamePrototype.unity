@@ -392,7 +392,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DrForms.Prototype.PrototypeCombat
   damage: 25
   range: 6
-  cooldown: 0.6
+  cooldown: 0.25
   projectileSpeed: 10
 --- !u!1 &257905877
 GameObject:

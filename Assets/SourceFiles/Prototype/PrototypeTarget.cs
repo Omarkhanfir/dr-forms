@@ -10,9 +10,19 @@ namespace DrForms.Prototype
         private Text label;
         private Image fill;
         private Transform healthDisplay;
+        private Renderer body;
+        private MaterialPropertyBlock visual;
+        private Color normalColor;
+        private float hitUntil;
+        public bool HitFlashActive => Time.time < hitUntil;
+        public float DisplayedHealthFraction { get; private set; } = 1;
+        public int DamageApplications { get; private set; }
         private void Awake()
         {
             Health = maximumHealth;
+            body = GetComponent<Renderer>();
+            normalColor = body.sharedMaterial.GetColor("_BaseColor");
+            visual = new MaterialPropertyBlock();
             var root = new GameObject("Target Health", typeof(Canvas));
             root.transform.SetParent(transform, false);
             root.transform.localPosition = Vector3.up * 1.6f;
@@ -47,18 +57,31 @@ namespace DrForms.Prototype
         private void LateUpdate()
         {
             if (Camera.main != null) healthDisplay.rotation = Camera.main.transform.rotation;
+            DisplayedHealthFraction = Mathf.MoveTowards(DisplayedHealthFraction,
+                (float)Health / maximumHealth, Time.deltaTime * 1.5f);
+            fill.rectTransform.anchorMax = new Vector2(DisplayedHealthFraction, 1);
+            visual.SetColor("_BaseColor", HitFlashActive ? new Color(1, 0.95f, 0.65f) : normalColor);
+            body.SetPropertyBlock(visual);
         }
         public void TakeDamage(int damage)
         {
             if (Health <= 0 || damage <= 0) return;
+            DamageApplications++;
+            hitUntil = Time.time + 0.12f;
             Health = Mathf.Max(0, Health - damage);
             RefreshHealth();
-            if (Health == 0) { gameObject.SetActive(false); Destroy(gameObject); }
+            if (Health == 0)
+            {
+                PrototypeCombatEffect.Spawn(transform.position, body.sharedMaterial,
+                    new Color(1, 0.7f, 0.2f), 1.4f, 0.3f, "Target Defeat");
+                gameObject.SetActive(false);
+                Destroy(gameObject);
+            }
         }
         private void RefreshHealth()
         {
             label.text = "Target " + Health + " / " + maximumHealth;
-            fill.rectTransform.anchorMax = new Vector2((float)Health / maximumHealth, 1);
+
         }
     }
 }
