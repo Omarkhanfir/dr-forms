@@ -120,6 +120,24 @@ public static class GamePrototypeBuild
         if (report.summary.result != BuildResult.Succeeded) throw new InvalidOperationException("Prototype build failed.");
     }
 
+    public static void AddCombatAndBuild()
+    {
+        var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        var player = GameObject.Find("Prototype Player");
+        if (player.GetComponent<PrototypeCombat>() == null) player.AddComponent<PrototypeCombat>();
+        if (UnityEngine.Object.FindAnyObjectByType<PrototypeTarget>() == null)
+        {
+            var target = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            target.name = "Stationary Target";
+            target.transform.position = new Vector3(0, 1, 4);
+            target.transform.localScale = new Vector3(1.2f, 2, 1.2f);
+            target.GetComponent<Renderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/GamePrototypeWall.mat");
+            target.AddComponent<PrototypeTarget>();
+        }
+        if (!EditorSceneManager.SaveScene(scene)) throw new InvalidOperationException("Scene save failed.");
+        Build();
+    }
+
     // Update only the existing prototype with the new floor reference and control component.
     public static void UpdateControlsAndBuild()
     {

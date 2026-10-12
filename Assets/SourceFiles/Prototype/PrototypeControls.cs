@@ -55,7 +55,7 @@ namespace DrForms.Prototype
             if (lastSafeArea != Screen.safeArea) UpdateSafeArea();
             if (showedAttack == AttackActive) return;
             showedAttack = AttackActive;
-            instruction.text = showedAttack ? "ATTACK INPUT\n" + normalInstruction : normalInstruction;
+            instruction.text = showedAttack ? "FIRED\n" + normalInstruction : normalInstruction;
             instruction.color = showedAttack ? new Color(1, 0.9f, 0.2f) : Color.white;
         }
 
@@ -90,6 +90,8 @@ namespace DrForms.Prototype
         public void RequestAttack()
         {
             if (!HasFocus) return;
+            var combat = GetComponent<PrototypeCombat>();
+            if (combat == null || !combat.TryAttack()) return;
             AttackCount++;
             attackUntil = Time.unscaledTime + 0.25f;
         }
@@ -138,8 +140,8 @@ namespace DrForms.Prototype
                 new Vector2(0, -48), new Vector2(-24, 72));
             var panel = hud.gameObject.AddComponent<Image>();
             panel.color = new Color(0.04f, 0.07f, 0.12f, 0.88f);
-            normalInstruction = TouchMode ? "Left thumb: move    Right thumb: attack\nAttack input only - no combat"
-                : "Move the mouse over the floor to move\nLeft click: attack input - no combat";
+            normalInstruction = TouchMode ? "Left thumb: move    Right thumb: attack\nNearest target in range"
+                : "Move the mouse over the floor to move\nLeft click: fire at nearest target in range";
             instruction = Label("Instructions Text", hud, normalInstruction, 20);
             circle = CreateCircle();
             var pad = Rect("Left Thumb Joystick", safeArea, Vector2.zero, Vector2.zero,

@@ -117,8 +117,18 @@ namespace DrForms.Prototype
         // Read-only browser verification; omitted from release builds.
         public void LogVerificationState()
         {
+            var combat = GetComponent<PrototypeCombat>();
+            var target = FindAnyObjectByType<PrototypeTarget>();
             Debug.Log("PROTOTYPE_STATE:" + JsonUtility.ToJson(new VerificationState
             {
+                shotsFired = combat != null ? combat.ShotsFired : 0,
+                projectiles = combat != null ? combat.ActiveProjectiles : 0,
+                damage = combat != null ? combat.Damage : 0,
+                range = combat != null ? combat.Range : 0,
+                cooldown = combat != null ? combat.Cooldown : 0,
+                targetHealth = target != null ? target.Health : 0,
+                targetAlive = target != null,
+                targetScreen = target != null ? Project(target.transform.position) : Vector3.zero,
                 position = transform.position,
                 destination = destination, hasDestination = hasDestination, arrived = arrived,
                 camera = movementCamera != null ? movementCamera.position : Vector3.zero,
@@ -143,6 +153,10 @@ namespace DrForms.Prototype
         [System.Serializable]
         private struct VerificationState
         {
+            public int shotsFired, projectiles, damage, targetHealth;
+            public float range, cooldown;
+            public bool targetAlive;
+            public Vector3 targetScreen;
             public Vector3 position, destination, camera, forward, playerFloorScreen, eastFloorScreen;
             public Vector2 input, joystickCenter, attackCenter, hudCenter;
             public bool touchMode, focused, pointerInside, hasDestination, arrived, attackActive;
