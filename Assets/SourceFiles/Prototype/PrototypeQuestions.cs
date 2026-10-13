@@ -80,11 +80,11 @@ namespace DrForms.Prototype
             progress = PrototypeControls.Label("Question Progress Text", status, "", 14);
             progress.resizeTextForBestFit = true; progress.resizeTextMinSize = 10; progress.resizeTextMaxSize = 14;
             panel = PrototypeControls.Rect("Question Screen", root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-            panel.gameObject.AddComponent<Image>().color = new Color(0.02f, 0.04f, 0.08f, 1);
+            panel.gameObject.AddComponent<Image>().color = new Color(0.025f, 0.10f, 0.11f, 1);
             var step = PrototypeControls.Rect("Fixed Question Progress", panel, new Vector2(.05f,.95f), new Vector2(.95f,1), Vector2.zero, Vector2.zero);
             questionStep = PrototypeControls.Label("Question Number", step, "", 18);
             var viewport = PrototypeControls.Rect("Question Viewport", panel, new Vector2(0.05f, 0.24f), new Vector2(0.95f, 0.95f), Vector2.zero, Vector2.zero);
-            viewport.gameObject.AddComponent<Image>().color = new Color(0.02f, 0.04f, 0.08f, 1);
+            viewport.gameObject.AddComponent<Image>().color = new Color(0.025f, 0.10f, 0.11f, 1);
             viewport.gameObject.AddComponent<RectMask2D>();
             contentRect = PrototypeControls.Rect("Scrollable Content", viewport, new Vector2(0, 1), Vector2.one, Vector2.zero, Vector2.zero);
             contentRect.pivot = new Vector2(0.5f, 1);

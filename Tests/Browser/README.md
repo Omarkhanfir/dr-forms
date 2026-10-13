@@ -12,7 +12,7 @@ Use an existing external Playwright installation (no Unity/package changes):
 ```powershell
 $env:DRFORMS_PLAYWRIGHT = 'C:\Users\21654\DrFormsGame-WebVerification\browser-tools\node_modules\playwright'
 $env:DRFORMS_FLOW_ARTIFACTS = 'C:\Users\21654\DrFormsGame-WebVerification'
-$env:DRFORMS_FLOW_BUILD_PATH = 'C:\Users\21654\DrFormsGame-WebVerification\CourtyardReviewBuild'
+$env:DRFORMS_FLOW_BUILD_PATH = 'C:\Users\21654\DrFormsGame-WebVerification\DrFormsLabFinalBuild'
 node Tests/Browser/reliable-flow.cjs
 ```
 
@@ -52,7 +52,7 @@ Answer/Retry/New Run controls.
 For the Garden Quest LAN preview (diagnostics off by default):
 
 ```powershell
-$env:DRFORMS_PREVIEW_ROOT = 'C:\Users\21654\DrFormsGame-WebVerification\CourtyardReviewBuild'
+$env:DRFORMS_PREVIEW_ROOT = 'C:\Users\21654\DrFormsGame-WebVerification\DrFormsLabFinalBuild'
 node Tests/Browser/wifi-preview.cjs
 ```
 
@@ -61,10 +61,10 @@ regression suite. CSS safe-area insets pad the actual canvas; its rendering
 pixel ratio is capped at 1.5. Use `?devDiagnostics=1` only for developer
 troubleshooting. Both the panel and Unity reporter require that explicit URL;
 normal gameplay has no phone diagnostic overlay. The menu shows a small
-`COURTYARD-ART-1` identifier. Physical notch behavior still requires a device.
+`DRFORMS-LAB-1` identifier. Physical notch behavior still requires a device.
 
 Controls: Play starts a run and activates procedural browser audio. Desktop
-mouse movement follows the garden floor; click casts at the nearest target.
+mouse movement follows the garden floor; click throws a flask at the nearest target.
 On touch devices use the left joystick and independent right Attack taps.
 Pause opens Resume and Restart / New Run; Restart resets answers/upgrades.
 Sound toggles persist in browser local storage (run progress remains in memory).
@@ -77,7 +77,7 @@ A short visible shield protects Play/Resume/question/focus recovery.
 Supplementary actual-browser UI/audio/layout checks:
 
 ```powershell
-$env:DRFORMS_FLOW_BUILD_PATH = 'C:\Users\21654\DrFormsGame-WebVerification\CourtyardReviewBuild'
+$env:DRFORMS_FLOW_BUILD_PATH = 'C:\Users\21654\DrFormsGame-WebVerification\DrFormsLabFinalBuild'
 node Tests/Browser/polish-ui.cjs
 node Tests/Browser/audio-bridge.cjs
 ```
@@ -118,12 +118,16 @@ portrait and landscape. The former `visual-presentation.cjs` arena boundary
 sweep targets the historical single arena and is not a dungeon-route check.
 
 
-Courtyard art checks use `courtyard-visual.cjs` (loopback 8768). They capture actual
+Courtyard art checks use `courtyard-visual.cjs` (loopback 8768). They record actual canvas gameplay as WebM and capture
 390 x 844 portrait and 844 x 390 landscape renders, exercise real touch movement
-and casts, and observe imported skeletal clips, the 1024 shadow budget and
+and throws, pause during wind-up, simultaneous joystick/throw touches and release delay. They observe imported skeletal clips, the 1024 shadow budget and
 existing effect caps through read-only snapshots. Screenshots and JSON stay
 outside Git. See `docs/ART_SOURCES.md` for pinned CC0 sources, licences and
 reproducible original environment/material authoring. Later rooms remain simpler.
 The flow runner uses visible nearby mouse waypoints with the closer art camera;
 guard assertions distinguish genuinely blocked gestures from fresh gestures
 delivered after the configured guard has expired.
+
+Lab recordings are `lab-{portrait,landscape}-gameplay.webm` outside Git. Review decoded consecutive frames from these recordings for alternating steps, independent throwing, hand release and follow-through; an advancing clip name alone does not establish visible animation. Release timing uses scaled time; pending releases cancel on gameplay input suspension. Decorative chemical splashes do not query targets or apply area damage.
+
+The motion suite uses the default room-one chaser speed (1.8 units/sec) and read-only initial spawn observations to begin moving away before contact. Run it separately from other software-rendered browser suites when verifying the short pending-throw interruption window.

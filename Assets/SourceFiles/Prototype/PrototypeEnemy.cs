@@ -42,7 +42,7 @@ namespace DrForms.Prototype
             IsRanged=ranged;speed=ranged?1.1f:Mathf.Min(speed,1.8f);
             contactDamage=Mathf.Min(contactDamage,10);contactCooldown=Mathf.Max(contactCooldown,1.5f);
             nextCast=Time.time+3.5f;
-            health.SetDisplayName(MageAppearance ? "Acolyte" : "Guardian");
+            health.SetDisplayName(MageAppearance ? "Bloom specimen" : "Moss specimen");
             if(!ranged)return;
             var obj=new GameObject("Amber Aim Warning");obj.transform.SetParent(transform,false);
             warning=obj.AddComponent<LineRenderer>();warning.useWorldSpace=true;warning.positionCount=2;

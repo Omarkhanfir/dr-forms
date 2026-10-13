@@ -1,9 +1,9 @@
 [
   {
     "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Acolyte.fbx",
-    "bytes": 22295116,
-    "sha256": "a5b6a9e9c690b2c23f52aa7a18aef411b56e9c660229c7e2d0f217f78752573c",
-    "licence": "KayKit CC0"
+    "bytes": 983004,
+    "sha256": "15e6d62053bd180a6601796a70a96d7b81767b443d26ad05aa4113f5ba5aa0b3",
+    "licence": "Original Dr.forms project asset (replaces historical KayKit character)"
   },
   {
     "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/EnemyAtlas.png",
@@ -25,21 +25,21 @@
   },
   {
     "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Gate.fbx",
-    "bytes": 48412,
-    "sha256": "2f1c60581d8525a69a6b25bc88cd96041f3aaff0d370c5a2e080323660b7168c",
+    "bytes": 51708,
+    "sha256": "a9f7456a850ced01c500fdff78cb9ca822a1506609049cd7499a80de93b5f6aa",
     "licence": "Original project asset"
   },
   {
     "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Guardian.fbx",
-    "bytes": 22402076,
-    "sha256": "783d88baface5b5aec4be3a1bdfe360e12e091dae753b3968161e7a69bd0c279",
-    "licence": "KayKit CC0"
+    "bytes": 982076,
+    "sha256": "455c4059721de8fd2a904c57ce6415296155cdab49cd1f2c28a93c2563517e65",
+    "licence": "Original Dr.forms project asset (replaces historical KayKit character)"
   },
   {
     "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Hero.fbx",
-    "bytes": 20659324,
-    "sha256": "b25e35cc7eaaa3c7c103f10a4f41fde1cbd81936fede9aa9ae4efbd29d40ba1b",
-    "licence": "KayKit CC0"
+    "bytes": 1018380,
+    "sha256": "5534c68b69364b9a02949b9de3b942236b9a83c97fb2c275fc1135ea8e2e1904",
+    "licence": "Original Dr.forms project asset (replaces historical KayKit character)"
   },
   {
     "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/HeroAtlas.png",
@@ -50,13 +50,13 @@
   {
     "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Panel.png",
     "bytes": 596,
-    "sha256": "393ccb1db8f6337c2087000aee6c83f6e7c4c8eaba994ef6136a6e91febe26fc",
+    "sha256": "d5d68df1df9e6767c31e88c4a3b6a2ddd5baf6a2681f563cf1b7c9d1efe1d720",
     "licence": "Original project asset"
   },
   {
     "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Room.fbx",
-    "bytes": 631564,
-    "sha256": "b6473a0162880681d7699b1e7a23e80facbc6eff136a4fa6dfb9d2f8a1cfcefb",
+    "bytes": 698396,
+    "sha256": "8deffed99e8148cda50692be188565e0741d759bfcc464ae79f12254da1592fc",
     "licence": "Original project asset"
   },
   {
@@ -73,8 +73,8 @@
   },
   {
     "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/TouchRing.png",
-    "bytes": 1212,
-    "sha256": "56446dd03f2faa93650b3ba7a668944bff25db9369d0f54056cd124f0c5a1514",
+    "bytes": 1218,
+    "sha256": "f964bdc843475c7cbfe6ae6f491352ff94c07983367c93a0c6eefbe35d6a9520",
     "licence": "Original project asset"
   },
   {

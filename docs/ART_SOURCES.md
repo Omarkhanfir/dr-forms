@@ -1,10 +1,41 @@
-# Mosslight Courtyard art provenance
+# Dr.forms laboratory art provenance
 
-This milestone builds one representative first room, retaining the connected three-room game. No assets were purchased and no Unity/package versions were changed.
+The DRFORMS-LAB-1 milestone replaces the knight, skeletons and weapons with original Dr.forms character geometry and authored skeletal animation. No purchases, new packages, Unity upgrades, downloaded audio or image-generation assets are used.
 
-## Third-party assets
+## Current original assets
 
-| Shipped asset | Creator/source | Licence and use | Changes |
+| Asset | Authoring source | Rights/provenance |
+| --- | --- | --- |
+| Hero.fbx | Tools/Art/build_lab_characters.py | Original scientist: ivory coat, teal gloves and boots, oversized goggles, swept white hair, violet satchel with coloured flasks. Original weighted skeleton and eight authored actions. |
+| Guardian.fbx / Acolyte.fbx | Same script | Original green Moss specimen and violet Bloom specimen, collars, chemical cores, eyes and plant growth. Existing pursuit/ranged behavior remains separate. |
+| Room.fbx / Gate.fbx | Tools/Art/build_courtyard.py | Original softened stone/tile courtyard, perimeter pipes, tanks, specimen vessels and plants, laboratory lintel/flask sign and teal metal shutters. First-room environment showcase; later environments remain simpler. |
+| Panel.png / TouchRing.png / StoneGrain.png / Spark.png | Tools/Art/build_surface.py | Original deterministic Pillow drawings; ivory/teal interface rims and procedural worn stone. |
+| Flask meshes, particles, trails and contact shadows | Runtime prototype code | Original collision-free meshes and bounded reusable effects. Decorative splash effects apply no damage. |
+| Throw and glass-impact sounds | Assets/Plugins/WebGL/PrototypeAudio.jslib | Original Web Audio synthesis: short falling throw tone and high glass-like impact notes. Eight-voice cap and existing persistent mute. Web-only; no external recordings. |
+
+These original project assets have no third-party licence requirement. This work does not select an application distribution licence.
+
+## Reproduce
+
+Use existing Blender 5.0.1 and Python/Pillow, preserving all existing .meta files/GUIDs:
+
+```powershell
+& 'C:/Program Files/Blender Foundation/Blender 5.0/blender.exe' -b -t 2 -P Tools/Art/build_lab_characters.py -- C:/Users/21654/DrFormsGame/Assets/SourceFiles/Prototype/Resources/Courtyard
+& 'C:/Program Files/Blender Foundation/Blender 5.0/blender.exe' -b -t 2 -P Tools/Art/build_courtyard.py -- C:/Users/21654/DrFormsGame/Assets/SourceFiles/Prototype/Resources/Courtyard
+python Tools/Art/build_surface.py Assets/SourceFiles/Prototype/Resources/Courtyard
+```
+
+The scoped model importer retains Legacy skeletal animation and authored material slots. Character collision/movement remains in the existing controller. Locomotion blends idle/walk/run, scales playback with measured movement, and uses independent right-arm throw animation with a 0.10-second scaled-time hand release. Coat tails, elbows and knees have bones; there is no cloth simulation, facial animation, IK foot planting or physically simulated glass.
+
+## Retained historical third-party sources
+
+The previous KayKit atlases/accessory source files and licence/download manifests remain in the repository for provenance and GUID continuity. They are no longer attached to the playable characters. Original character FBXs replace the prior imports in place. The old generation scripts remain historical tools and must not be run over the laboratory character files.
+
+The following sections are the archived COURTYARD-ART-1 record. Their character descriptions, retained-FBX sizes and reproduction commands describe that historical milestone, not the current laboratory build. Original downloads/hashes and grants remain recorded; the current FBXs are original replacements.
+
+## Historical courtyard third-party assets
+
+| Historical asset | Creator/source | Licence and use | Changes |
 | --- | --- | --- | --- |
 | Hero.fbx, HeroAtlas.png, Wand.fbx | Kay Lousberg, [KayKit Adventurers 1.0](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/tree/672074b73ba276876a19e8816ecdc5241817ab47) | [Creator's CC0 commercial-use grant](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/blob/672074b73ba276876a19e8816ecdc5241817ab47/LICENSE.txt); retained copy: [licence](licenses/KayKit-adventurers-CC0.txt) | Knight rig/body/cape/helmet; unused weapon variants removed; eight skeletal clips retained by the Unity importer. Red cloth/plume atlas colours remapped to azure by hero_palette.py, preserving skin/metal/UVs. Wand attached to hand slot at runtime. |
 | Guardian.fbx, Acolyte.fbx, EnemyAtlas.png, EnemyBlade.fbx, EnemyStaff.fbx | Kay Lousberg, [KayKit Skeletons 1.0](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0/tree/15b62b9bad122f72926c10fb14d622c73819fa54) | [Creator's CC0 commercial-use grant](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0/blob/15b62b9bad122f72926c10fb14d622c73819fa54/LICENSE.txt); retained copy: [licence](licenses/KayKit-skeletons-CC0.txt) | Warrior and Mage rigs retained, unused variants removed, eight clips retained by the Unity importer. Original atlas unchanged. Separate blade/staff hand accessories. |

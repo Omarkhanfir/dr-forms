@@ -14,7 +14,7 @@ namespace DrForms.Prototype
         public bool GameplayEnabled { get; private set; } = true;
         public bool InputReady => HasFocus && epoch == PrototypeBrowserInput.Epoch
             && !waitingForRelease && Time.frameCount > inputResumeFrame;
-        public const string BuildId = "COURTYARD-ART-1";
+        public const string BuildId = "DRFORMS-LAB-1";
         public bool Started { get; private set; }
         public bool ManualPaused { get; private set; }
         public bool CanPlay => GameplayEnabled && Started && !ManualPaused && InputReady;
@@ -131,7 +131,7 @@ namespace DrForms.Prototype
                 endTitle.text = playerHealth.IsDefeated ? "TRY AGAIN" : "QUEST COMPLETE";
                 if (summaryDamage != GetComponent<PrototypeCombat>().Damage || wasDefeated != playerHealth.IsDefeated) {
                 summaryDamage = GetComponent<PrototypeCombat>().Damage; wasDefeated = playerHealth.IsDefeated;
-                summary.text = playerHealth.IsDefeated ? "Your answers and wand upgrades are safe.\nRetry the current room." : "Three rooms cleared | Three answers saved\nWand power " + GetComponent<PrototypeCombat>().Damage + " | Ready for a new adventure?"; }
+                summary.text = playerHealth.IsDefeated ? "Your answers and flask upgrades are safe.\nRetry the current room." : "Three rooms cleared | Three answers saved\nFlask power " + GetComponent<PrototypeCombat>().Damage + " | Ready for a new adventure?"; }
                 graceLabel.text = playerHealth.GraceActive && CanPlay ? "SHIELD | Safe for a moment" : "";
                 pauseButton.gameObject.SetActive(Started && GameplayEnabled && !ManualPaused);
                 muteLabel.text = PrototypeAudio.Muted ? "Sound: off" : "Sound: on";
@@ -236,6 +236,7 @@ namespace DrForms.Prototype
 
         public void Suspend()
         {
+            GetComponent<PrototypeCombat>()?.CancelPendingThrow();
             pointerReady = false;
             joystick?.ResetInput();
             attackUntil = 0;
@@ -278,7 +279,7 @@ namespace DrForms.Prototype
                 new Vector2(0, -18), new Vector2(-24, 28));
             var panel = hud.gameObject.AddComponent<Image>();
             panel.sprite = CourtyardArt.Panel; panel.type = Image.Type.Sliced; panel.color = new Color(1,1,1,.70f);
-            normalInstruction = TouchMode ? "MOSSLIGHT | Move + cast" : "MOSSLIGHT COURTYARD | Mouse to move | Click to cast";
+            normalInstruction = TouchMode ? "DR.FORMS | Move + throw" : "DR.FORMS LAB | Mouse to move | Click to throw";
             instruction = Label("Instructions Text", hud, normalInstruction, 14);
             circle = CreateCircle();
             var pad = Rect("Left Thumb Joystick", safeArea, Vector2.zero, Vector2.zero,
@@ -300,7 +301,7 @@ namespace DrForms.Prototype
             var attackImage = attackButton.gameObject.AddComponent<Image>();
             attackImage.sprite = CourtyardArt.Touch;
             attackImage.color = Color.white;
-            Label("Attack Label", attackButton, "CAST", 20);
+            Label("Attack Label", attackButton, "THROW", 20);
             attackButton.gameObject.AddComponent<PrototypeAttackButton>().Owner = this;
             pad.gameObject.SetActive(TouchMode);
             attackButton.gameObject.SetActive(TouchMode);
@@ -323,7 +324,7 @@ namespace DrForms.Prototype
             waveLabel = Label("Wave Text", waveBar, "Room 1 / 3", 16);
 
             defeatPanel = Rect("Defeat Screen", safeArea, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-            defeatPanel.gameObject.AddComponent<Image>().color = new Color(0.02f, 0.04f, 0.08f, 0.94f);
+            defeatPanel.gameObject.AddComponent<Image>().color = new Color(0.025f, 0.10f, 0.11f, 0.94f);
             var title = Rect("Defeat Title", defeatPanel, Vector2.one * 0.5f, Vector2.one * 0.5f,
                 new Vector2(0, 95), new Vector2(400, 60));
             endTitle = Label("Defeat Text", title, "DEFEATED", 34);
@@ -340,11 +341,11 @@ namespace DrForms.Prototype
             defeatPanel.gameObject.SetActive(false);
         }
 
-        public void NotifyReward(int reward) { rewardLabel.text = "WAND UPGRADED  +" + reward + " power"; rewardUntil = Time.unscaledTime + 2.5f; }
+        public void NotifyReward(int reward) { rewardLabel.text = "FORMULA UPGRADED  +" + reward + " power"; rewardUntil = Time.unscaledTime + 2.5f; }
         private void CreateMenu()
         {
             var reward = Rect("Upgrade Notice", safeArea, new Vector2(.15f,.65f), new Vector2(.85f,.65f), Vector2.zero, new Vector2(0,40));
-            rewardLabel = Label("Wand Upgrade", reward, "", 24); rewardLabel.color = new Color(1,.88f,.42f);
+            rewardLabel = Label("Flask Upgrade", reward, "", 24); rewardLabel.color = new Color(.94f,.88f,.70f);
             rewardLabel.resizeTextForBestFit = true; rewardLabel.resizeTextMinSize = 14; rewardLabel.resizeTextMaxSize = 24;
             var shield = Rect("Grace Status", safeArea, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -85), new Vector2(270, 18));
             graceLabel = Label("Shield", shield, "", 12);
@@ -354,12 +355,12 @@ namespace DrForms.Prototype
             menu = Rect("Adventure Menu", safeArea, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             menu.gameObject.AddComponent<Image>().color = new Color(.045f,.09f,.11f,1f);
             var accent = Rect("Sunwood Crest", menu, new Vector2(0.42f, 0.90f), new Vector2(0.58f, 0.94f), Vector2.zero, Vector2.zero);
-            accent.gameObject.AddComponent<Image>().color = new Color(.95f,.75f,.3f);
+            accent.gameObject.AddComponent<Image>().color = new Color(.67f,.87f,.24f);
             var heading = Rect("Menu Heading", menu, new Vector2(0.08f, 0.71f), new Vector2(0.92f, 0.92f), Vector2.zero, Vector2.zero);
-            var title = Label("Garden Quest", heading, "MOSSLIGHT COURTYARD\nAn adventure in learning", 32);
+            var title = Label("Garden Quest", heading, "DR.FORMS LAB\nAn experiment in learning", 32);
             title.resizeTextForBestFit = true; title.resizeTextMinSize = 20; title.resizeTextMaxSize = 32;
             var help = Rect("Menu Help", menu, new Vector2(0.08f, 0.47f), new Vector2(0.92f, 0.70f), Vector2.zero, Vector2.zero);
-            var text = Label("Controls", help, (TouchMode ? "Left thumb: move\nRight thumb: tap Attack to cast" : "Move your mouse over the garden to walk\nClick to cast at the nearest creature") + "\nThree rooms. Submit your answer, then walk through the open exit.", 21);
+            var text = Label("Controls", help, (TouchMode ? "Left thumb: move\nRight thumb: tap THROW" : "Move your mouse over the lab floor to walk\nClick to throw a flask at the nearest creature") + "\nThree rooms. Submit your answer, then walk through the open exit.", 21);
             text.resizeTextForBestFit = true; text.resizeTextMinSize = 14; text.resizeTextMaxSize = 21;
             playButton = MenuButton("Play", menu, new Vector2(0.5f, 0.37f), Vector2.zero, new Vector2(230, 58), Begin);
             resumeButton = MenuButton("Resume", menu, new Vector2(0.5f, 0.37f), Vector2.zero, new Vector2(230, 58), Resume);

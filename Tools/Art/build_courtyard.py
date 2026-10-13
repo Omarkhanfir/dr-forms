@@ -4,7 +4,7 @@ from pathlib import Path
 from mathutils import Vector
 random.seed(81);bpy.ops.wm.read_factory_settings(use_empty=True)
 out=Path(sys.argv[sys.argv.index('--')+1]);out.mkdir(parents=True,exist_ok=True)
-colors={'Stone':(.46,.52,.48,1),'StoneLight':(.64,.66,.55,1),'StoneDark':(.30,.38,.36,1),'Tile':(.48,.55,.45,1),'TileLight':(.53,.58,.48,1),'TileDark':(.44,.51,.42,1),'Wood':(.24,.16,.12,1),'Gold':(.63,.45,.19,1),'Iron':(.10,.17,.19,1),'Leaf':(.15,.32,.19,1),'LeafLight':(.31,.44,.20,1),'Trunk':(.20,.17,.12,1),'Cloth':(.13,.34,.37,1),'Glow':(.30,.85,.74,1),'Flame':(1,.60,.12,1)}
+colors={'Stone':(.46,.52,.48,1),'StoneLight':(.64,.66,.55,1),'StoneDark':(.30,.38,.36,1),'Tile':(.48,.55,.45,1),'TileLight':(.53,.58,.48,1),'TileDark':(.44,.51,.42,1),'Wood':(.06,.26,.27,1),'Gold':(.63,.45,.19,1),'Iron':(.10,.17,.19,1),'Leaf':(.15,.32,.19,1),'LeafLight':(.31,.44,.20,1),'Trunk':(.20,.17,.12,1),'Cloth':(.13,.34,.37,1),'Glow':(.30,.85,.74,1),'Flame':(1,.60,.12,1)}
 mats={}
 for name,color in colors.items():
  m=bpy.data.materials.new(name);m.diffuse_color=color;m.use_nodes=True;m.node_tree.nodes.get('Principled BSDF').inputs['Base Color'].default_value=color;mats[name]=m
@@ -54,12 +54,12 @@ for i in range(13):
  v=[(math.cos(t)*r,yy,1.7+math.sin(t)*r*.55) for yy in [9.5,10.5] for r in [2,2.65] for t in [a,b]]
  mesh('Arch voussoir',v,[(0,1,3,2),(4,6,7,5),(0,4,5,1),(2,3,7,6),(0,2,6,4),(1,5,7,3)],'StoneLight' if i%2 else 'Stone')
 # Door model centred at collider origin, moved by existing door animation.
-for i in range(8):box('Carved oak plank',(-1.72+i*.49,0,0),(.46,.28,2.72),'Wood',.055,gate)
+for i in range(8):box('Laboratory shutter',(-1.72+i*.49,0,0),(.46,.28,2.72),'Wood',.055,gate)
 for z in [-.95,.92]:box('Iron gate binding',(0,-.19,z),(3.86,.10,.14),'Iron',.035,gate)
 for x in [-1.7,1.7]:
  for z in [-.95,.92]:box('Brass rivet',(x,-.27,z),(.12,.08,.12),'Gold',.035,gate)
 box('Gate sigil',(0,-.22,.1),(.68,.12,.8),'Iron',.09,gate)
-box('Gate crest',(0,-.3,.1),(.33,.08,.4),'Gold',.07,gate)
+box('Chemical lock',(0,-.3,.1),(.33,.08,.4),'Glow',.07,gate)
 # Peripheral foliage: branching trunks and custom layered leaf lobes outside collision routes.
 def branch(start,end,r,mat='Trunk'):
  d=Vector(end)-Vector(start);bpy.ops.mesh.primitive_cone_add(vertices=7,radius1=r,radius2=r*.62,depth=d.length,location=(Vector(start)+Vector(end))/2);o=bpy.context.object;o.rotation_euler=d.to_track_quat('Z','Y').to_euler();o.data.materials.append(mats[mat]);objects.append(o)
@@ -77,12 +77,25 @@ for x,y in [(-8,-8),(8,-8),(-8,7),(8,7),(-8,0),(8,2)]:
   a=k*math.pi*2/9;length=random.uniform(.55,1.05)
   mesh('Sculpted fern frond',[(x,y,.04),(x+math.cos(a)*length*.6-.1,y+math.sin(a)*length*.6,.30),(x+math.cos(a)*length,y+math.sin(a)*length,.15),(x+math.cos(a)*length*.6+.1,y+math.sin(a)*length*.6,.25)],[(0,1,2),(0,2,3)],'LeafLight' if k%2 else 'Leaf')
  for k in range(3):canopy((x+random.uniform(-.6,.6),y+random.uniform(-.6,.6),.12),(.25,.3,.18),'StoneDark')
-# Recessed banner brackets and two restrained torch braziers.
+# Original laboratory perimeter equipment: bounded, collision-free scenery.
 for x in [-8.5,8.5]:
- box('Banner',(x,9.35,1.8),(1.1,.06,1.5),'Cloth',.025)
- box('Banner brass line',(x,9.30,1.8),(.05,.04,1.1),'Gold',.01)
- box('Torch bowl',(x,8.3,.55),(.7,.7,.35),'Iron',.10)
- branch((x,8.3,.68),(x,8.3,1.18),.18,'Flame')
+ box('Teal laboratory bench',(x,6.8,.75),(1.4,3,.2),'Iron',.06)
+ for y in [5.8,7.6]:
+  branch((x,y,0),(x,y,1.8),.45,'Cloth')
+  ring('Tank brass rim',.43,.49,1.7,'Gold',x,y)
+  branch((x,y,1.8),(x,y,2.05),.17,'Glow')
+ for y in [-5,-1,3]:
+  branch((x,y,0),(x,y,1.0),.30,'Iron')
+  canopy((x,y,1.35),(.42,.42,.50),'Glow')
+  branch((x,y,1.7),(x,y,2.0),.15,'Cloth')
+  for k in range(3):
+   a=k*math.tau/3;canopy((x+math.cos(a)*.23,y+math.sin(a)*.23,1.4),(.14,.14,.3),'LeafLight')
+ branch((x,9.3,.3),(x,-8,.3),.12,'Gold')
+ branch((x,-8,.3),(x,-8,1.8),.12,'Gold')
+ box('Laboratory exit lintel',(0,10,3.15),(4.8,.7,.45),'Iron')
+ for x in [-.5,.5]:box('Laboratory exit lamps',(x,9.60,3.15),(.30,.05,.12),'Glow',.02)
+# Flask insignia over door, with clear chemical-green centre.
+box('Flask sign',(0,9.58,3.15),(.25,.05,.30),'Glow',.04)
 # Join static meshes by material for a small, predictable draw-call budget.
 def export(group,name):
  bpy.ops.object.select_all(action='DESELECT')

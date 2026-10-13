@@ -23,6 +23,7 @@ namespace DrForms.Prototype
         private readonly BoxCollider[] doorColliders = new BoxCollider[3];
         private readonly float[] doorOpen = new float[3];
         private GameObject route;
+        private readonly Renderer[] exitLamps=new Renderer[3];
         public int RoomIndex => currentRoom;
         public bool ExitUnlocked => questions.AnswerCount >= currentRoom + 1;
         public float DoorOpening => doorOpen[currentRoom];
@@ -81,6 +82,8 @@ namespace DrForms.Prototype
                     Barrier("Door frame", new Vector3(x, 1.5f, z + 10), new Vector3(.6f, 3, .8f));
                 }
                 var door = Barrier("Locked room " + (room + 1) + " exit", new Vector3(0, 1.4f, z + 10), new Vector3(4, 2.8f, .6f), 3);
+                exitLamps[room]=PrototypeCharacterVisual.Part(route.transform,"Laboratory exit status",PrimitiveType.Cube,new Vector3(1.65f,2.95f,z+9.6f),new Vector3(.3f,.18f,.12f),6).GetComponent<Renderer>();
+                if(room>0)CourtyardArt.DressGate(door.transform);
                 doors[room] = door.transform; doorColliders[room] = door.GetComponent<BoxCollider>();
                 if (questions.AnswerCount > room) { doorOpen[room] = 1; door.transform.position += Vector3.up * 3.2f; doorColliders[room].enabled = false; }
                 // Flat directional markers serve navigation rather than decoration.
@@ -119,6 +122,7 @@ namespace DrForms.Prototype
             if (player.IsDefeated || Victory || !controls.CanPlay) return;
             for (int room = 0; room < 3; room++)
             {
+                if(exitLamps[room]!=null)exitLamps[room].sharedMaterial=CourtyardArt.EnvironmentMaterial(questions.AnswerCount>room?"Green":"Violet");
                 if (questions.AnswerCount <= room || doors[room] == null) continue;
                 doorOpen[room] = Mathf.MoveTowards(doorOpen[room], 1, Time.deltaTime / .85f);
                 doors[room].position = new Vector3(0, 1.4f + doorOpen[room] * 3.2f, RoomCenter(room) + 10);
@@ -181,7 +185,7 @@ namespace DrForms.Prototype
                 var enemy = Instantiate(enemyTemplate, positions[spawnIndex], Quaternion.identity);
                 var ranged = WaveNumber >= 1 && spawnIndex == positions.Count - 1;
                 enemy.ConfigureForWave(ranged, spawnIndex == positions.Count - 1);
-                enemy.name = "Wave " + (WaveNumber + 1) + (ranged ? " Flower Mage" : " Mossling");
+                enemy.name = "Wave " + (WaveNumber + 1) + (ranged ? " Bloom specimen" : " Moss specimen");
                 enemy.gameObject.SetActive(true);
                 living.Add(enemy.GetComponent<PrototypeTarget>());
             }

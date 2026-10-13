@@ -21,20 +21,37 @@ const server=http.createServer((req,res)=>{
   const state=async()=>{const n=states.length;await page.evaluate(()=>window.prototypeInstance.SendMessage('Prototype Player','LogVerificationState'));for(let i=0;i<200&&states.length===n;i++)await page.waitForTimeout(20);assert(states.length>n);return states.at(-1);};
   const client=async(s,p)=>{const b=await page.locator('#unity-canvas').boundingBox();return{x:b.x+p.x/s.screenWidth*b.width,y:b.y+(1-p.y/s.screenHeight)*b.height};};
   let s=await state();const play=await client(s,s.playCenter);await page.touchscreen.tap(play.x,play.y);await page.waitForTimeout(550);s=await state();
+  await page.evaluate(()=>{window.labChunks=[];window.labRecorder=new MediaRecorder(document.querySelector('#unity-canvas').captureStream(30),{mimeType:'video/webm;codecs=vp9',videoBitsPerSecond:2500000});window.labRecorder.ondataavailable=e=>{if(e.data.size)window.labChunks.push(e.data)};window.labRecorder.start();});
   assert(s.started&&s.artSkinnedParts>0&&s.artAnimation==='Idle'&&s.artShadowResolution===1024);const idle=s.artClipTime;await page.waitForTimeout(250);s=await state();assert(s.artClipTime!==idle);pass('Rigged hero has advancing skeletal idle clip',{label,parts:s.artSkinnedParts});
   await page.screenshot({path:path.join(artifacts,`art-${label}-room.png`)});
-  const center=await client(s,s.joystickCenter),thumb=await client(s,{x:s.joystickCenter.x+s.joystickRadius*.6,y:s.joystickCenter.y+s.joystickRadius*.5});
-  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...center,id:1}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...thumb,id:1}]});let capturedRun=false;
-  for(let i=0;i<8;i++){await page.waitForTimeout(80);s=await state();if(s.artAnimation==='Running_A'&&!capturedRun){capturedRun=true;await page.screenshot({path:path.join(artifacts,`art-${label}-run.png`)});}}
-  assert(capturedRun&&Math.hypot(s.position.x,s.position.z)>1);pass('Actual joystick movement plays skeletal run without moving the controller through animation',{label});
-  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.waitForTimeout(100);s=await state();
-  const end=Date.now()+15000;while(Math.hypot(s.enemyPosition.x-s.position.x,s.enemyPosition.z-s.position.z)>5&&Date.now()<end){await page.waitForTimeout(200);s=await state();}
+  // Start away from the nearest initial spawn while both chasers are still outside contact range.
+  // Default room-one chasers move at 1.8 units/sec toward the stationary player; no state is injected.
+  const near=s.spawns.reduce((best,p)=>Math.hypot(p.x,p.z)<Math.hypot(best.x,best.z)?p:best),initialDistance=Math.hypot(near.x,near.z);
+  const end=Date.now()+15000;while(initialDistance-1.8*s.time>4.5&&Date.now()<end){await page.waitForTimeout(100);s=await state();}
+  const length=Math.hypot(near.x,near.z),center=await client(s,s.joystickCenter),thumb=await client(s,{x:s.joystickCenter.x-near.x/length*s.joystickRadius*.65,y:s.joystickCenter.y-near.z/length*s.joystickRadius*.65});
+  const start=s.position,shots=s.shotsFired,attack=await client(s,s.attackCenter);
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...center,id:1}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...thumb,id:1}]});
+  let capturedRun=false;for(let i=0;i<4&&!capturedRun;i++){await page.waitForTimeout(60);s=await state();if(s.artAnimation==='Running_A'){capturedRun=true;await page.screenshot({path:path.join(artifacts,`art-${label}-run.png`)});}}
+  for(let i=0;i<2;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...thumb,id:1},{...attack,id:2}]});await page.waitForTimeout(150);s=await state();await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[{...thumb,id:1}]});await page.waitForTimeout(150);}
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});s=await state();
+  assert(capturedRun&&Math.hypot(s.position.x-start.x,s.position.z-start.z)>1);pass('Actual joystick movement plays skeletal run without moving the controller through animation',{label});
+  assert(s.shotsFired>shots);pass('Simultaneous actual touch movement and throwing',{label});
+  const pause=await client(s,s.pauseCenter),attackForPause=await client(s,s.attackCenter);
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...attackForPause,id:2}]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...attackForPause,id:2},{...pause,id:3}]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[{...attackForPause,id:2}]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.waitForTimeout(180);s=await state();
+  assert(s.manualPaused&&!s.throwPending&&s.attackCount>s.shotsFired);const pausedShots=s.shotsFired;await page.waitForTimeout(160);s=await state();assert(s.shotsFired===pausedShots);
+  const resume=await client(s,s.resumeCenter);await page.touchscreen.tap(resume.x,resume.y);await page.waitForTimeout(200);s=await state();assert(!s.manualPaused&&!s.throwPending&&s.shotsFired===pausedShots);pass('Pause cancels pending release and Resume launches no delayed attack',{label});
   const before=s.shotsFired;
   for(let i=0;i<2;i++){
    const a=await client(s,s.attackCenter);await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...a,id:2}]});await page.waitForTimeout(65);s=await state();await page.screenshot({path:path.join(artifacts,`art-${label}-cast-${i}.png`)});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.waitForTimeout(300);s=await state();
   }
+  assert(s.releaseDelay>=.099&&s.releaseDelay<.20);pass('Flask release follows the authored wind-up timing',{label,delay:s.releaseDelay});
   assert(s.shotsFired>before&&states.some(x=>x.artAnimation==='Spellcast_Shoot'));pass('Real Attack plays skeletal cast and launches the existing bounded projectile',{label,shots:s.shotsFired});
   assert(states.every(x=>x.projectilePool<=8&&x.effects<=24&&x.enemyBolts<=4));pass('New presentation retains effect/projectile caps',{label});
+  const recording=await page.evaluate(async()=>{await new Promise(r=>{window.labRecorder.onstop=r;window.labRecorder.stop()});return await new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result.split(',')[1]);f.readAsDataURL(new Blob(window.labChunks,{type:'video/webm'}))})});
+  fs.writeFileSync(path.join(artifacts,`lab-${label}-gameplay.webm`),Buffer.from(recording,'base64'));
   assert(errors.length===0,errors.join('\n'));pass('Phone-resolution render has no browser or Unity errors',{label});await context.close();
  }
  result.environment={browser:browser.version(),renderer:'Headless Chrome/SwiftShader; phone viewport and touch emulation, not physical Safari'};

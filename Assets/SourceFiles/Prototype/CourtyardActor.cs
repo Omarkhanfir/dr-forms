@@ -4,7 +4,10 @@ using UnityEngine.Rendering;
 namespace DrForms.Prototype {
  // Imported rig and real skeletal clips; never moves the gameplay controller.
  public sealed class CourtyardActor : MonoBehaviour {
-  private Transform rig,weapon,shield;
+  private Transform rig,weapon,shield,hand;
+  public Vector3 ReleasePosition => hand!=null?hand.position:transform.position;
+  public void BeginThrow(){castUntil=Time.time+.25f;playing=null;Play("Spellcast_Shoot",false);}
+  public void CancelThrow(){castUntil=0;playing=null;Play("Idle",true);}
   private Animation motion;
   private readonly Dictionary<string,AnimationClip> clips=new Dictionary<string,AnimationClip>();
   private readonly MaterialPropertyBlock tint=new MaterialPropertyBlock();
@@ -15,7 +18,7 @@ namespace DrForms.Prototype {
   private PrototypeCombat combat;
   private Vector3 previous;
   private string playing;
-  private int hits,shots,contacts;
+  private int hits,contacts;
   private float hitUntil,castUntil,deathAt=-1,nextDust;
   public string CurrentAnimation => playing;
   public float ClipTime => motion!=null&&playing!=null&&motion[playing]!=null?motion[playing].time:0;
@@ -27,13 +30,6 @@ namespace DrForms.Prototype {
    var source=Resources.Load<GameObject>("Courtyard/"+name);
    if(source==null){Debug.LogError("Missing character asset: "+name);return;}
    var model=Instantiate(source,rig,false);model.transform.localPosition=Vector3.zero;model.transform.localRotation=Quaternion.identity;
-   var bodies=model.GetComponentsInChildren<Renderer>();
-   // Imported skinned bounds include FBX's centimetre armature scale. Measure deformed vertices instead.
-   var bounds=Measure(bodies);
-   model.transform.localScale*=(player!=null?2.35f:2.15f)/Mathf.Max(.1f,bounds.size.y);
-   bounds=Measure(bodies);model.transform.position+=Vector3.up*(rig.position.y-bounds.min.y);
-   var material=CourtyardArt.CharacterMaterial(player!=null);
-   foreach(var body in bodies){body.sharedMaterial=material;body.shadowCastingMode=ShadowCastingMode.On;body.receiveShadows=true;}
    motion=model.GetComponent<Animation>();if(motion==null)motion=model.AddComponent<Animation>();
    motion.playAutomatically=false;motion.Stop();motion.cullingType=AnimationCullingType.AlwaysAnimate;
    foreach(var clip in Resources.LoadAll<AnimationClip>("Courtyard/"+name)) {
@@ -41,10 +37,16 @@ namespace DrForms.Prototype {
     foreach(var key in new[]{"Idle","Running_A","Walking_A","Spellcast_Shoot","Spellcasting","Hit_A","Death_A","1H_Melee_Attack_Slice_Horizontal"})
      if(clip.name.EndsWith(key)){clips[key]=clip;motion.AddClip(clip,key);}
    }
-   var hand=System.Array.Find(model.GetComponentsInChildren<Transform>(),t=>t.name=="handslot.r");
-   var tool=Resources.Load<GameObject>("Courtyard/"+(player!=null?"Wand":enemy!=null&&enemy.MageAppearance?"EnemyStaff":"EnemyBlade"));
-   if(hand!=null&&tool!=null){weapon=Instantiate(tool,hand,false).transform;weapon.localPosition=Vector3.zero;weapon.localRotation=Quaternion.identity;
-    foreach(var body in weapon.GetComponentsInChildren<Renderer>()){body.sharedMaterial=material;body.shadowCastingMode=ShadowCastingMode.On;}}
+   if(clips.ContainsKey("Idle"))clips["Idle"].SampleAnimation(model,0);
+   var bodies=model.GetComponentsInChildren<Renderer>();
+   // Establish the animated bind transform before measuring deformed vertices.
+   var bounds=Measure(bodies);
+   model.transform.localScale*=(player!=null?2.35f:2.15f)/Mathf.Max(.1f,bounds.size.y);
+   bounds=Measure(bodies);model.transform.position+=Vector3.up*(rig.position.y-bounds.min.y);
+
+   foreach(var body in bodies){var slots=body.sharedMaterials;for(int i=0;i<slots.Length;i++)slots[i]=CourtyardArt.EnvironmentMaterial(slots[i].name);body.sharedMaterials=slots;body.shadowCastingMode=ShadowCastingMode.On;body.receiveShadows=true;}
+   hand=System.Array.Find(model.GetComponentsInChildren<Transform>(),t=>t.name=="handslot.r");
+   if(player!=null&&hand!=null){weapon=PrototypeCharacterVisual.Part(hand,"Held chemical flask",PrimitiveType.Sphere,Vector3.zero,new Vector3(.22f/hand.lossyScale.x,.22f/hand.lossyScale.y,.22f/hand.lossyScale.z),5);PrototypeCharacterVisual.Part(weapon,"Flask neck",PrimitiveType.Cylinder,new Vector3(0,.65f,0),new Vector3(.28f,.45f,.28f),7);}
    renderers=model.GetComponentsInChildren<Renderer>();
    PrototypePresentation.Contact(transform,new Vector3(0,-.98f,0),player!=null?1.1f:1.2f);
    if(player!=null){
@@ -52,6 +54,7 @@ namespace DrForms.Prototype {
     var line=shield.gameObject.AddComponent<LineRenderer>();line.useWorldSpace=false;line.loop=true;line.positionCount=48;line.widthMultiplier=.028f;line.sharedMaterial=CourtyardArt.GlowMaterial;
     for(int i=0;i<48;i++)line.SetPosition(i,new Vector3(Mathf.Cos(i*Mathf.PI/24)*.65f,0,Mathf.Sin(i*Mathf.PI/24)*.65f));
    }
+   if(player!=null&&motion["Spellcast_Shoot"]!=null){motion["Spellcast_Shoot"].layer=1;var arm=System.Array.Find(model.GetComponentsInChildren<Transform>(),t=>t.name=="Arm.R");if(arm!=null)motion["Spellcast_Shoot"].AddMixingTransform(arm,true);}
    previous=transform.position;Play("Idle",true);
   }
   private static Bounds Measure(Renderer[] bodies){
@@ -68,8 +71,8 @@ namespace DrForms.Prototype {
   private void Play(string name,bool loop){
    if(motion==null||playing==name||!clips.ContainsKey(name))return;
    playing=name;motion[name].wrapMode=loop?WrapMode.Loop:WrapMode.ClampForever;
-   motion[name].speed=name=="Spellcast_Shoot"?2.7f:name=="Running_A"?1.15f:1;
-   motion.CrossFade(name,.10f);
+   motion[name].speed=1;
+   motion[name].time=0;motion.CrossFade(name,name=="Spellcast_Shoot"?.035f:.10f);
   }
   private void LateUpdate(){
    if(rig==null||motion==null)return;
@@ -88,11 +91,15 @@ namespace DrForms.Prototype {
    else if(moving)rig.rotation=Quaternion.Slerp(rig.rotation,Quaternion.LookRotation(delta),Time.deltaTime*14);
    int damage=player!=null?player.DamageApplications:target!=null?target.DamageApplications:0;
    if(damage!=hits){hits=damage;hitUntil=Time.time+.22f;playing=null;Play("Hit_A",false);}
-   if(combat!=null&&shots!=combat.ShotsFired){shots=combat.ShotsFired;castUntil=Time.time+.34f;playing=null;Play("Spellcast_Shoot",false);}
+   if(weapon!=null)weapon.gameObject.SetActive(combat!=null&&combat.ThrowPending);
    if(enemy!=null&&contacts!=enemy.ContactHits){contacts=enemy.ContactHits;castUntil=Time.time+.35f;playing=null;Play("1H_Melee_Attack_Slice_Horizontal",false);}
-   if(Time.time>=hitUntil&&Time.time>=castUntil)Play(enemy!=null&&enemy.Telegraphing?"Spellcasting":moving?"Running_A":"Idle",true);
+   if(player!=null&&Time.time<castUntil){var locomotion=moving?(delta.magnitude/Mathf.Max(.001f,Time.deltaTime)<2?"Walking_A":"Running_A"):"Idle";if(clips.ContainsKey(locomotion)&&!motion.IsPlaying(locomotion))motion.CrossFade(locomotion,.08f,PlayMode.StopSameLayer);}
+   if(Time.time>=hitUntil&&Time.time>=castUntil)Play(enemy!=null&&enemy.Telegraphing?"Spellcasting":moving?(delta.magnitude/Mathf.Max(.001f,Time.deltaTime)<2?"Walking_A":"Running_A"):"Idle",true);
+   if(Time.time>=castUntil&&motion["Spellcast_Shoot"]!=null)motion.Blend("Spellcast_Shoot",0,.08f);
+   if(motion["Running_A"]!=null)motion["Running_A"].speed=Mathf.Clamp(delta.magnitude/Mathf.Max(.001f,Time.deltaTime)/4.0f,.25f,2f);
+   if(motion["Walking_A"]!=null)motion["Walking_A"].speed=Mathf.Clamp(delta.magnitude/Mathf.Max(.001f,Time.deltaTime)/2.7f,.15f,1.5f);
    tint.SetColor("_BaseColor",Time.time<hitUntil?new Color(1.65f,1.4f,.95f):Color.white);
-   foreach(var body in renderers)body.SetPropertyBlock(tint);
+   foreach(var body in renderers)body.SetPropertyBlock(Time.time<hitUntil?tint:null);
    if(moving&&Time.time>=nextDust){nextDust=Time.time+.24f;PrototypeCombatEffect.Spawn(transform.position+new Vector3(0,-.92f,-.12f),PrototypeCharacterVisual.Paint(10),new Color(.65f,.66f,.49f),.12f,.3f,"Footstep Dust");}
    if(shield!=null)shield.gameObject.SetActive(player.GraceActive);
   }

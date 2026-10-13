@@ -78,12 +78,13 @@ namespace DrForms.Prototype
             Health = Mathf.Max(0, Health - damage);
             RefreshHealth();
             PrototypeAudio.Play(1);
-            PrototypeCombatEffect.Spawn(transform.position, PrototypeCharacterVisual.Paint(8), new Color(1,.8f,.35f), .5f, .2f, "Wand Impact");
+            PrototypeCombatEffect.Spawn(transform.position, PrototypeCharacterVisual.Paint(8), new Color(.65f,.9f,.2f), .5f, .2f, "Chemical Splash");
             for(int i=0;i<3;i++) {
                 float angle=i*Mathf.PI*2/3;
                 PrototypeCombatEffect.Spawn(transform.position+new Vector3(Mathf.Cos(angle)*.35f,.1f,Mathf.Sin(angle)*.35f),
-                    PrototypeCharacterVisual.Paint(11),new Color(1,.94f,.6f),.13f,.22f,"Impact Spark");
+                    PrototypeCharacterVisual.Paint(11),new Color(.55f,.91f,.86f),.13f,.22f,"Glass Fragment");
             }
+            for(int i=0;i<3;i++)PrototypeCombatEffect.Spawn(transform.position+new Vector3((i-1)*.15f,.1f,.1f),CourtyardArt.GlowMaterial,new Color(.65f,.9f,.2f),.18f,.32f,"Chemical Splash");
             if (Health == 0)
             {
                 PrototypeCombatEffect.Spawn(transform.position, body.sharedMaterial,

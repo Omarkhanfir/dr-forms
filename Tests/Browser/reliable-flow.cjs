@@ -352,7 +352,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
         passed('Ordinary touch Retry after active-combat defeat preserves answers/rewards and restores only the unfinished wave', {phone:t.target.phone,wave});
         return clearWave(t,holdOnFinal,retries+1);
       }
-      if(observedTelegraph && observedRangedShot) passed('Flower mage windup and slow ranged shot observed during actual combat', {wave:s.wave,phone:t.target.phone});
+      if(observedTelegraph && observedRangedShot) passed('Bloom specimen windup and slow ranged shot observed during actual combat', {wave:s.wave,phone:t.target.phone});
       assert(!s.defeated,'Defeated while clearing wave');assert(s.questionPaused,'No question after clear');
       assert(s.answers.length===s.wave-1 && !s.victory && !s.onBreak);
       if(t.target.touch){ // joystick touch survives into UI until explicitly released
@@ -496,7 +496,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
         passed('Background touches cannot recover focus or fire and becoming visible with DOM focus false does not resume');
         s=await recoverSafari(t,s,s.attackCenter,1);assert(s.canPlay&&!s.hasDestination);
         passed('Trusted visible Attack recovery is consumed until release; saved combat clock resumes despite DOM focus staying false');
-        await clearSafariObservation(t);s=await click(t,s,s.attackCenter);assert(s.shotsFired===before+1);
+        await clearSafariObservation(t);s=await click(t,s,s.attackCenter);s=await poll(t,x=>x.shotsFired===before+1&&!x.throwPending);assert(s.shotsFired===before+1);
         passed('A fresh Attack after recovery fires normally exactly once');
       }
       s=await clearWave(t);

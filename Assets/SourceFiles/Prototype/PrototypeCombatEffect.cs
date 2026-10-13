@@ -14,6 +14,7 @@ namespace DrForms.Prototype
         private bool counted;
         private Color color;
         private Vector3 origin, drift;
+        private bool splash,fragment;
         private static Mesh sprite;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetPool(){pool.Clear();active=0;}
@@ -30,8 +31,9 @@ namespace DrForms.Prototype
                 effect.properties=new MaterialPropertyBlock();
             }
             effect.gameObject.name=name;effect.transform.position=position;effect.transform.localScale=Vector3.one*size;
+            effect.splash=name=="Chemical Splash";effect.fragment=name=="Glass Fragment";
             effect.body.sharedMaterial=CourtyardArt.GlowMaterial;effect.color=color;effect.origin=position;
-            float angle=active*2.4f;effect.drift=new Vector3(Mathf.Cos(angle)*.22f,.35f,Mathf.Sin(angle)*.22f);
+            float angle=active*2.4f;effect.drift=new Vector3(Mathf.Cos(angle)*.65f,.65f,Mathf.Sin(angle)*.65f);
             effect.properties.SetColor("_BaseColor",color);effect.body.SetPropertyBlock(effect.properties);
             effect.started=Time.time;effect.duration=duration;effect.size=size;effect.counted=true;active++;
             effect.gameObject.SetActive(true);
@@ -41,8 +43,8 @@ namespace DrForms.Prototype
             float progress=(Time.time-started)/duration;
             if(progress>=1){gameObject.SetActive(false);pool.Enqueue(this);return;}
             if(Camera.main!=null)transform.rotation=Camera.main.transform.rotation;
-            transform.position=origin+drift*progress;
-            transform.localScale=Vector3.one*size*(1+progress*.5f);
+            transform.position=origin+drift*progress-(splash||fragment?Vector3.up*(progress*progress*.55f):Vector3.zero);
+            transform.localScale=(splash?new Vector3(1.5f,.65f,1):Vector3.one)*size*(1+progress*.5f);
             properties.SetColor("_BaseColor",new Color(color.r,color.g,color.b,color.a*(1-progress)*(1-progress)));body.SetPropertyBlock(properties);
         }
         private void OnDisable(){if(counted){active=Mathf.Max(0,active-1);counted=false;}}

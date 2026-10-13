@@ -74,9 +74,9 @@ Start with one game: the Unity 3D action RPG. Design the platform to support add
 - **Pricing:** Undecided.
 - **Hosting:** Undecided.
 
-## Garden Quest local polish
+## Historical Garden Quest local polish
 
-The current game uses an original procedural garden fantasy style, an adventurer
+An earlier prototype used an original procedural garden fantasy style, an adventurer
 with a growing crystal wand, mushroom chasers, and one slower telegraphed flower
 mage in waves two and three. Counts remain 2/3/4, with three equal-reward questions
 and Submit-unlocked room exits. Damage protection follows Play, Resume,
@@ -87,7 +87,7 @@ separate from question, background and ending pauses. Sound preference persists
 in browser local storage; assessment/run progress is still in memory. Retry
 preserves submitted answers/upgrades. The default preview hides developer
 diagnostics; use `?devDiagnostics=1` explicitly for troubleshooting. The menu
-shows `COURTYARD-ART-1`. Phone layouts use a safe-area-aware canvas and browser
+shows `DRFORMS-LAB-1`. Phone layouts use a safe-area-aware canvas and browser
 insets. Physical iPhone verification of this new polish is pending; the user
 confirmed movement and attack in the preceding SAFARI-FOCUS-2 build.
 
@@ -103,12 +103,16 @@ This improves the prototype; it does not provide commercial character art.
 
 ## Representative room art
 
-The first dungeon room is the Mosslight Courtyard visual showcase. It combines
-original Blender-authored stonework, paving, arch/gate and perimeter vegetation
-with licensed CC0 KayKit knight/Guardian/Acolyte models and real skeletal clips.
-Source and licence records are in [ART_SOURCES.md](ART_SOURCES.md). A single
-1024 directional shadow map, warm/cool lighting, soft contacts, bounded luminous
-spell effects and smaller framed touch/HUD elements replace the prior primitive
-characters and flat unshaded room. Later room environments remain simpler;
-all three encounters, question/reward transactions and Safari controls remain.
-This is a local art review milestone, not a hosting or pricing decision.
+The first room is an overgrown experimental laboratory courtyard. Original
+rigged Dr.forms scientist and experimental creatures replace the medieval
+characters, with goggles, wild hair, an ivory coat, teal gloves/boots and a
+colourful flask satchel. Blended locomotion and an independent throwing arm
+support moving flask attacks. A short hand release, flight arc, bounded chemical
+splashes and glass-like synthesized sound replace the wand presentation; damage
+remains single-target. Sources and rights are in [ART_SOURCES.md](ART_SOURCES.md).
+
+The warm-ivory/deep-teal palette with restrained green/violet accents extends to
+HUD, controls, specimen equipment and locked/open exit indicators. The existing
+1024 shadow budget, three encounters, question/reward transactions, progression,
+controls and Safari recovery remain. Later rooms retain simpler environments.
+This is a local review milestone; hosting and pricing remain undecided.

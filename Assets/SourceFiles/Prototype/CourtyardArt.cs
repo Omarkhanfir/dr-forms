@@ -21,16 +21,17 @@ namespace DrForms.Prototype {
    m=new Material(Shader.Find("Universal Render Pipeline/Lit"));m.SetTexture("_BaseMap",Resources.Load<Texture2D>("Courtyard/"+(hero?"HeroAtlas":"EnemyAtlas")));
    m.SetColor("_BaseColor",Color.white);m.SetFloat("_Smoothness",.24f);m.SetFloat("_Metallic",hero?.25f:.1f);m.enableInstancing=true;materials[key]=m;return m;
   }
-  private static Material EnvironmentMaterial(string key){
+  public static Material EnvironmentMaterial(string key){
    key=key.Split('.')[0];
    if(materials.TryGetValue(key,out var m)&&m!=null)return m;
-   var colors=new Dictionary<string,Color>{{"Stone",new Color(.46f,.52f,.48f)},{"StoneLight",new Color(.64f,.66f,.55f)},{"StoneDark",new Color(.30f,.38f,.36f)},
-    {"Tile",new Color(.48f,.55f,.45f)},{"TileLight",new Color(.56f,.60f,.49f)},{"TileDark",new Color(.39f,.48f,.40f)},
-    {"Wood",new Color(.24f,.16f,.12f)},{"Gold",new Color(.63f,.45f,.19f)},{"Iron",new Color(.10f,.17f,.19f)},
+   var colors=new Dictionary<string,Color>{{"Ivory",new Color(.94f,.88f,.70f)},{"Teal",new Color(.035f,.24f,.25f)},{"Skin",new Color(.72f,.43f,.24f)},{"Hair",new Color(.9f,.92f,.83f)},{"Green",new Color(.62f,.88f,.16f)},{"Violet",new Color(.50f,.23f,.70f)},{"Glass",new Color(.30f,.75f,.76f)},{"Black",new Color(.025f,.07f,.09f)},{"Stone",new Color(.46f,.52f,.48f)},{"StoneLight",new Color(.64f,.66f,.55f)},{"StoneDark",new Color(.30f,.38f,.36f)},
+    {"Tile",new Color(.60f,.64f,.59f)},{"TileLight",new Color(.76f,.74f,.64f)},{"TileDark",new Color(.30f,.43f,.42f)},
+    {"Wood",new Color(.06f,.26f,.27f)},{"Gold",new Color(.63f,.45f,.19f)},{"Iron",new Color(.10f,.17f,.19f)},
     {"Leaf",new Color(.15f,.32f,.19f)},{"LeafLight",new Color(.31f,.44f,.20f)},{"Trunk",new Color(.20f,.17f,.12f)},
     {"Cloth",new Color(.13f,.34f,.37f)},{"Glow",new Color(.30f,.85f,.74f)},{"Flame",new Color(1,.60f,.12f)}};
    m=new Material(Shader.Find("Universal Render Pipeline/Lit"));m.SetColor("_BaseColor",colors.TryGetValue(key,out var color)?color:Color.gray);m.SetFloat("_Smoothness",.12f);m.enableInstancing=true;
    if(key.StartsWith("Stone")||key.StartsWith("Tile")){m.SetTexture("_BaseMap",Resources.Load<Texture2D>("Courtyard/StoneGrain"));}
+   if(key=="Glass")m.SetFloat("_Smoothness",.72f);
    if(key=="Gold"||key=="Iron"){m.SetFloat("_Metallic",.65f);m.SetFloat("_Smoothness",.4f);}
    if(key=="Glow"||key=="Flame"){m.EnableKeyword("_EMISSION");m.SetColor("_EmissionColor",color*1.5f);}
    materials[key]=m;return m;
@@ -47,13 +48,17 @@ namespace DrForms.Prototype {
    foreach(var renderer in route.GetComponentsInChildren<MeshRenderer>())
     if(renderer.transform.position.z<=10.6f&&renderer.name!="Forward route marker")renderer.enabled=false;
    foreach(var renderer in route.GetComponentsInChildren<MeshRenderer>())if(renderer.name=="Forward route marker"&&renderer.transform.position.z<10)renderer.enabled=false;
-   var room=Object.Instantiate(Resources.Load<GameObject>("Courtyard/Room"),route,false);room.name="Mosslight courtyard - representative room";room.transform.localPosition=Vector3.zero;room.transform.localRotation=Quaternion.Euler(0,180,0);
+   var room=Object.Instantiate(Resources.Load<GameObject>("Courtyard/Room"),route,false);room.name="Dr.forms experimental laboratory courtyard";room.transform.localPosition=Vector3.zero;room.transform.localRotation=Quaternion.Euler(0,180,0);
    Dress(room);
    var gate=Object.Instantiate(Resources.Load<GameObject>("Courtyard/Gate"),door,false);gate.transform.localPosition=Vector3.zero;gate.transform.localRotation=Quaternion.Euler(0,180,0);gate.transform.localScale=new Vector3(1/door.localScale.x,1/door.localScale.y,1/door.localScale.z);Dress(gate);
    // Visuals have no colliders; the existing room/door/controller remain authoritative.
    foreach(var collision in room.GetComponentsInChildren<Collider>())Object.Destroy(collision);
    var light=RenderSettings.sun; if(light!=null){light.color=new Color(1,.91f,.72f);light.intensity=1.5f;light.transform.rotation=Quaternion.Euler(55,-32,0);light.shadows=LightShadows.Soft;light.shadowStrength=.62f;light.shadowBias=.04f;light.shadowNormalBias=.25f;}
    RenderSettings.ambientMode=AmbientMode.Trilight;RenderSettings.ambientSkyColor=new Color(.42f,.54f,.61f);RenderSettings.ambientEquatorColor=new Color(.31f,.40f,.36f);RenderSettings.ambientGroundColor=new Color(.18f,.23f,.20f);
+  }
+  public static void DressGate(Transform door){
+   door.GetComponent<Renderer>().enabled=false;
+   var gate=Object.Instantiate(Resources.Load<GameObject>("Courtyard/Gate"),door,false);gate.transform.localRotation=Quaternion.Euler(0,180,0);gate.transform.localScale=new Vector3(1/door.localScale.x,1/door.localScale.y,1/door.localScale.z);Dress(gate);
   }
   private static void Dress(GameObject root){foreach(var renderer in root.GetComponentsInChildren<Renderer>()){renderer.sharedMaterial=EnvironmentMaterial(renderer.gameObject.name);renderer.shadowCastingMode=ShadowCastingMode.On;renderer.receiveShadows=true;}}
   [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

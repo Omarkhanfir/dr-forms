@@ -23,12 +23,12 @@ mergeInto(LibraryManager.library, {
     var a = window.drFormsAudio;
     if (!a || a.muted || !a.context || a.context.state !== 'running' || a.voices >= 8) return;
     var c = a.context, now = c.currentTime;
-    var notes = kind === 3 ? [523,659,784,1047] : kind === 2 ? [523,784] : kind === 1 ? [220] : [660];
+    var notes = kind === 3 ? [523,659,784,1047] : kind === 2 ? [523,784] : kind === 1 ? [1760,2349] : [440];
     notes.forEach(function(f, i) {
       if (a.voices >= 8) return;
       var o = c.createOscillator(), g = c.createGain(), start = now + i * .09;
-      o.type = kind === 1 ? 'triangle' : 'sine'; o.frequency.setValueAtTime(f, start);
-      o.frequency.exponentialRampToValueAtTime(kind === 0 ? f * 1.7 : f * .95, start + .12);
+      o.type = kind === 1 ? 'sine' : kind === 0 ? 'triangle' : 'sine'; o.frequency.setValueAtTime(f, start);
+      o.frequency.exponentialRampToValueAtTime(kind === 0 ? f * .4 : kind === 1 ? f * .75 : f * .95, start + .12);
       g.gain.setValueAtTime(0, start); g.gain.linearRampToValueAtTime(.035, start + .008);
       g.gain.exponentialRampToValueAtTime(.0001, start + .16);
       o.connect(g); g.connect(c.destination); a.voices++; a.tones++;

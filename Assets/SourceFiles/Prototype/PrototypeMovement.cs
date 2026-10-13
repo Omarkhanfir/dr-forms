@@ -132,6 +132,9 @@ namespace DrForms.Prototype
             Debug.Log("PROTOTYPE_STATE:" + JsonUtility.ToJson(new VerificationState
             {
                 frame = Time.frameCount, realtime = Time.realtimeSinceStartup,
+                throwPending=combat!=null&&combat.ThrowPending,
+                releaseDelay=combat!=null?combat.ReleaseDelay:0,
+                releaseOrigin=combat!=null?combat.LastReleaseOrigin:Vector3.zero,
                 artShadowResolution = CourtyardArt.ShadowResolution,
                 artAnimation = GetComponent<CourtyardActor>() != null ? GetComponent<CourtyardActor>().CurrentAnimation : "",
                 artClipTime = GetComponent<CourtyardActor>() != null ? GetComponent<CourtyardActor>().ClipTime : 0,
@@ -229,6 +232,9 @@ namespace DrForms.Prototype
         [System.Serializable]
         private struct VerificationState
         {
+            public bool throwPending;
+            public float releaseDelay;
+            public Vector3 releaseOrigin;
             public string artAnimation;
             public float artClipTime;
             public int artSkinnedParts, artShadowResolution;

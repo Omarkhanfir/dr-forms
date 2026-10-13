@@ -70,13 +70,13 @@ namespace DrForms.Prototype
                 int first = vertices.Count;
                 float shade = ((x * 17 + z * 31) & 3) * .009f;
                 bool path = Mathf.Abs(x * 2 + 1) < 2 && z * 2 + 1 > -8 && z * 2 + 1 < 63;
-                Color color = path ? new Color(.35f + shade, .39f + shade, .29f + shade) : new Color(.20f + shade, .32f + shade, .22f + shade);
+                Color color = path ? new Color(.49f + shade, .55f + shade, .50f + shade) : new Color(.16f + shade, .27f + shade, .23f + shade);
                 vertices.Add(new Vector3(x*2,.006f,z*2)); vertices.Add(new Vector3(x*2,.006f,z*2+2));
                 vertices.Add(new Vector3(x*2+2,.006f,z*2+2)); vertices.Add(new Vector3(x*2+2,.006f,z*2));
                 for (int i=0;i<4;i++) colors.Add(color);
                 triangles.AddRange(new[]{first,first+1,first+2,first,first+2,first+3});
             }
-            groundMesh = new Mesh { name = "Quiet Garden Tiles" }; groundMesh.SetVertices(vertices); groundMesh.SetColors(colors); groundMesh.SetTriangles(triangles,0); groundMesh.RecalculateNormals();
+            groundMesh = new Mesh { name = "Laboratory approach tiles" }; groundMesh.SetVertices(vertices); groundMesh.SetColors(colors); groundMesh.SetTriangles(triangles,0); groundMesh.RecalculateNormals();
             var carpet = new GameObject("Full Viewport Grass",typeof(MeshFilter),typeof(MeshRenderer)); carpet.transform.SetParent(decorations.transform);
             carpet.GetComponent<MeshFilter>().sharedMesh = groundMesh;
             groundMaterial = new Material(Shader.Find("DrForms/Garden Ground")); carpet.GetComponent<Renderer>().sharedMaterial = groundMaterial;
