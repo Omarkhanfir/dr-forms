@@ -131,6 +131,10 @@ namespace DrForms.Prototype
             var questions = GetComponent<PrototypeQuestions>();
             Debug.Log("PROTOTYPE_STATE:" + JsonUtility.ToJson(new VerificationState
             {
+                applicationFocus = Application.isFocused, bridgeFocus = PrototypeBrowserInput.Focused,
+                timeScale = Time.timeScale, browserEpoch = PrototypeBrowserInput.Epoch,
+                gameplayEnabled = controls.GameplayEnabled, canPlay = controls.CanPlay,
+                inputReady = controls.InputReady, pointerPressed = PrototypeControls.AnyPointerPressed(),
                 selectedAnswer = questions != null ? questions.Selected : -1,
                 questionInputReady = questions != null && questions.InputReady,
                 submitCenter = questions != null ? questions.SubmitCenter : Vector2.zero,
@@ -207,6 +211,9 @@ namespace DrForms.Prototype
         [System.Serializable]
         private struct VerificationState
         {
+            public bool applicationFocus, bridgeFocus, gameplayEnabled, canPlay, inputReady, pointerPressed;
+            public float timeScale;
+            public int browserEpoch;
             public bool questionInputReady;
             public int selectedAnswer;
             public Vector2 submitCenter;

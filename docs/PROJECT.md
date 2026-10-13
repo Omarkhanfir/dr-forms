@@ -37,7 +37,7 @@ restart does not preserve it. No backend, persistence, hosting, or pricing
 decision is implied.
 
 Prototype verification (2026-10-13): the Web development build succeeded, and
-44 actual Chrome mouse/keyboard/emulated-touch browser checks passed across
+54 actual Chrome mouse/keyboard/emulated-touch browser checks passed across
 four complete runs and two defeat/retry cycles. Question/Victory
 screenshots, build logs and results are outside Git; see [HANDOFF.md](HANDOFF.md)
 and [browser regression instructions](../Tests/Browser/README.md). Physical
@@ -46,6 +46,13 @@ fixtures and alternative Inspector configurations remain unverified. Next
 manual check: rapidly attack through a final kill, release, change a selection,
 and verify that only Submit Answer records it, awards once, and resumes without
 firing an attack.
+
+iPhone 12 Safari testing subsequently confirmed a focus-bridge deadlock: visible
+canvas touches reached Unity while DOM/browser focus remained false and paused
+the clock. A trusted touch on the visible game now restores bridge focus and
+is consumed until release; subsequent fresh input can play. Question, ending,
+and background pauses remain protected. The diagnostic `SAFARI-FOCUS-2` player
+is available for the user's physical-phone retest; see the latest handoff.
 
 For timed tests, the timer counts only time spent answering questions. Gameplay and other time outside answering do not consume the test's answering-time allowance.
 

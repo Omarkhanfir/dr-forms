@@ -12,7 +12,9 @@ namespace DrForms.Prototype
         public RectTransform UIRoot => safeArea;
         public bool TouchMode { get; private set; }
         public bool GameplayEnabled { get; private set; } = true;
-        public bool CanPlay => GameplayEnabled && HasFocus && !waitingForRelease && Time.frameCount > inputResumeFrame;
+        public bool InputReady => HasFocus && epoch == PrototypeBrowserInput.Epoch
+            && !waitingForRelease && Time.frameCount > inputResumeFrame;
+        public bool CanPlay => GameplayEnabled && InputReady;
         public bool WaitingForRelease => waitingForRelease;
         public bool DefeatVisible => defeatPanel != null && defeatPanel.gameObject.activeSelf;
         public bool VictoryVisible => DefeatVisible && waves != null && waves.Victory;
@@ -79,10 +81,12 @@ namespace DrForms.Prototype
             }
             else if (HasFocus && focusClockPaused)
             {
-                Time.timeScale = scaleBeforeFocusLoss;
+                // Focus owns only its own pause. A question/end/configuration
+                // pause that is still active must never be lifted by recovery.
+                Time.timeScale = GameplayEnabled ? scaleBeforeFocusLoss : 0;
                 focusClockPaused = false;
             }
-            if (waitingForRelease && !AnyPointerPressed())
+            if (HasFocus && epoch == PrototypeBrowserInput.Epoch && waitingForRelease && !AnyPointerPressed())
             {
                 waitingForRelease = false;
                 // Ignore the reload frame's release/click before accepting fresh input.
@@ -284,7 +288,9 @@ namespace DrForms.Prototype
                 new Vector2(0, -35), new Vector2(240, 64));
             restartButton.gameObject.AddComponent<Image>().color = new Color(0.1f, 0.5f, 0.4f);
             Label("Restart Text", restartButton, "RESTART", 26);
-            restartButton.gameObject.AddComponent<Button>().onClick.AddListener(() => playerHealth?.Restart());
+            var restart = restartButton.gameObject.AddComponent<PrototypeRestartButton>();
+            restart.Owner = this;
+            restart.onClick.AddListener(() => playerHealth?.Restart());
             defeatPanel.gameObject.SetActive(false);
         }
 
@@ -328,5 +334,33 @@ namespace DrForms.Prototype
             circleTexture.Apply();
             return Sprite.Create(circleTexture, new Rect(0, 0, 64, 64), Vector2.one * 0.5f);
         }
+    }
+
+    // Ending screens retain their pause during focus recovery. The recovery
+    // finger cannot click Retry/New Run even if the UI module runs before input.
+    public sealed class PrototypeRestartButton : Button
+    {
+        public PrototypeControls Owner;
+        private readonly Dictionary<int, int> presses = new Dictionary<int, int>();
+        public override void OnPointerDown(PointerEventData data)
+        {
+            presses.Remove(data.pointerId);
+            if (Owner.InputReady && data.button == PointerEventData.InputButton.Left)
+                presses[data.pointerId] = PrototypeBrowserInput.Epoch;
+            base.OnPointerDown(data);
+        }
+        public override void OnPointerClick(PointerEventData data)
+        {
+            var valid = presses.TryGetValue(data.pointerId, out var epoch) && epoch == PrototypeBrowserInput.Epoch;
+            presses.Remove(data.pointerId);
+            if (valid && Owner.InputReady && data.clickCount == 1) base.OnPointerClick(data);
+        }
+        public override void OnSubmit(BaseEventData data)
+        {
+            var keys = Keyboard.current;
+            if (Owner.InputReady && keys != null && (keys.enterKey.wasPressedThisFrame
+                || keys.numpadEnterKey.wasPressedThisFrame || keys.spaceKey.wasPressedThisFrame)) base.OnSubmit(data);
+        }
+        protected override void OnDisable() { presses.Clear(); base.OnDisable(); }
     }
 }

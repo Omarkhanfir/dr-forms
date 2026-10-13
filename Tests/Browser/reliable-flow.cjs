@@ -2,7 +2,8 @@ const http = require('http'), fs = require('fs'), path = require('path'), assert
 const { chromium } = require(process.env.DRFORMS_PLAYWRIGHT || 'playwright');
 const artifacts = process.env.DRFORMS_FLOW_ARTIFACTS;
 assert(artifacts && path.isAbsolute(artifacts), 'Set DRFORMS_FLOW_ARTIFACTS to an absolute external build/artifact directory');
-const root = path.join(artifacts, 'GamePrototypeBuild');
+const root = process.env.DRFORMS_FLOW_BUILD_PATH || path.join(artifacts, 'GamePrototypeBuild');
+const port = Number(process.env.DRFORMS_FLOW_PORT || 8766);
 const result = { sessions: [], checks: [] };
 const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const lag = s => Math.hypot(s.camera.x - s.position.x - 8, s.camera.y - s.position.y - 14, s.camera.z - s.position.z + 10);
@@ -26,7 +27,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
 (async () => {
   let browser;
   try {
-    await new Promise(resolve => server.listen(8765, '127.0.0.1', resolve));
+    await new Promise(resolve => server.listen(port, '127.0.0.1', resolve));
     browser = await chromium.launch({ executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true, args: ['--enable-unsafe-swiftshader'] });
     async function open(touch, phone = false) {
       const target = {touch,phone}; result.sessions.push(target);
@@ -36,6 +37,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
         userAgent: 'Mozilla/5.0 (Linux; Android 13; Tablet) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
       } : { viewport: { width: 1280, height: 900 } });
       const page = await context.newPage();
+      if(phone) await page.addInitScript(()=>{document.hasFocus=()=>false;});
       await page.addInitScript(() => {
         window.touchAudit = [];
         for (const type of ['touchstart', 'touchend', 'touchcancel'])
@@ -50,7 +52,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
       page.on('pageerror', error => target.events.push({ type: 'pageerror', text: error.message }));
       page.on('requestfailed', req => target.events.push({ type: 'requestfailed', url: req.url() }));
       page.on('response', res => { if (res.status() >= 400) target.events.push({ type: 'http-error', url: res.url(), status: res.status() }); });
-      await page.goto('http://127.0.0.1:8765', { waitUntil: 'domcontentloaded' });
+      await page.goto(`http://127.0.0.1:${port}`, { waitUntil: 'domcontentloaded' });
       await page.waitForFunction(() => !!window.prototypeInstance, null, { timeout: 180000 });
       await page.waitForTimeout(1500);
       const snapshot = async () => {
@@ -71,6 +73,12 @@ function passed(name, details) { result.checks.push({ name, details }); console.
           y: box.y + (1 - point.y / s.screenHeight) * box.height };
       };
       let s = await snapshot();
+      if(phone){
+        await page.waitForTimeout(500);s=await snapshot();target.safariStartup=s;
+        assert(s.applicationFocus&&!s.bridgeFocus&&!s.focused&&s.timeScale===0&&s.waitingForRelease&&!s.pointerPressed);
+        passed('Safari startup with DOM focus false reproduces the exact paused/input-wait state before any interaction');
+        const p=await client(s,s.attackCenter);await page.touchscreen.tap(p.x,p.y);
+      }
       const playableDeadline = Date.now() + 20000;
       while (s.time <= 0 && Date.now() < playableDeadline) {
         await page.waitForTimeout(500);
@@ -78,6 +86,12 @@ function passed(name, details) { result.checks.push({ name, details }); console.
       }
       assert(s.time > 0, 'Unity game loop did not start');
       assert(s.touchMode === touch, 'Wrong control mode: ' + JSON.stringify(s));
+      if(phone){
+        assert(s.focused&&s.bridgeFocus&&s.applicationFocus&&s.timeScale===1&&s.shotsFired===0);
+        assert(await page.evaluate(()=>!document.hasFocus()));
+        await page.evaluate(()=>{delete document.hasFocus;});
+        passed('Trusted visible startup touch restores the saved clock while DOM focus stays false and fires no attack');
+      }
       target.initial = s;
       return { page, context, snapshot, client, target };
     }
@@ -129,10 +143,42 @@ function passed(name, details) { result.checks.push({ name, details }); console.
       assert.deepStrictEqual(q.projectilePositions,s.projectilePositions);
       return q;
     };
+    // Fault injection is restricted to browser focus/visibility observations.
+    // Unity gameplay state is never set: reproduce Safari's DOM focus false
+    // while Unity focus remains true, then recover using trusted real input.
+    const safariPause=async(t)=>{
+      await t.page.evaluate(()=>{
+        document.hasFocus=()=>false;
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+      const s=await poll(t,x=>x.applicationFocus&&!x.bridgeFocus&&!x.focused
+        &&x.timeScale===0&&x.waitingForRelease&&!x.pointerPressed);
+      assert(await t.page.evaluate(()=>!document.hidden&&!document.hasFocus()));
+      return freeze(t,s);
+    };
+    const clearSafariObservation=async(t)=>t.page.evaluate(()=>{delete document.hasFocus;delete document.hidden;});
+    const recoverSafari=async(t,s,point,scale)=>{
+      const p=await t.client(s,point),epoch=s.browserEpoch,shots=s.shotsFired,answers=s.answers;
+      if(t.target.touch)await t.cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...p,id:9}]});
+      else {await t.page.mouse.move(p.x,p.y);await t.page.mouse.down();}
+      await t.page.waitForTimeout(150);s=await t.snapshot();
+      assert(s.applicationFocus&&s.bridgeFocus&&s.focused&&s.browserEpoch>epoch&&s.waitingForRelease&&!s.canPlay);
+      assert(s.shotsFired===shots);assert.deepStrictEqual(s.answers,answers);
+      assert(await t.page.evaluate(()=>!document.hasFocus()),'Recovery incorrectly relied on DOM focus becoming true');
+      if(t.target.touch)await t.cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+      else await t.page.mouse.up();
+      s=await poll(t,x=>x.inputReady&&!x.waitingForRelease&&!x.pointerPressed&&x.timeScale===scale);
+      assert(s.shotsFired===shots);assert.deepStrictEqual(s.answers,answers);
+      return s;
+    };
     // All actions below are browser mouse/keyboard/CDP touch events. SendMessage is
     // used only by snapshot() for the development build's read-only observation.
-    async function clearWave(t,holdOnFinal=false){
-      let s=await t.snapshot(),angle=0,lastClick=-1,held=false,heldAt=0;
+    async function clearWave(t,holdOnFinal=false,retries=0){
+      let s=await t.snapshot(),lastClick=-1,held=false,heldAt=0,lastAlive=s;
+      const initialShots=s.shotsFired,initialMoving=s.movingSeconds;
+      // Continue around the perimeter after answering instead of resetting the
+      // goal across the arena and running through a random chaser cluster.
+      let angle=Math.hypot(s.position.x,s.position.z)>1?Math.atan2(s.position.z,s.position.x)+Math.PI/6:0;
       const end=Date.now()+100000;
       while(!s.questionPaused && !s.defeated && Date.now()<end){
         let goal={x:6*Math.cos(angle),z:6*Math.sin(angle)};
@@ -160,12 +206,31 @@ function passed(name, details) { result.checks.push({ name, details }); console.
             await t.page.mouse.down();await t.page.keyboard.down('Enter');held=true;heldAt=Date.now();holdOnFinal=false;
           }
         }
-        await t.page.waitForTimeout(45);s=await t.snapshot();
+        lastAlive=s;await t.page.waitForTimeout(45);s=await t.snapshot();
         if(held && !s.questionPaused && Date.now()-heldAt>1200){
           // The nearest target may have been the practice target. Keep kiting;
           // release and try again rather than assuming that shot clears a wave.
           await t.page.mouse.up();await t.page.keyboard.up('Enter');held=false;holdOnFinal=true;
         }
+      }
+      if(s.defeated&&t.target.touch&&retries<2){
+        // Random chasers can legitimately kill a moving test player. Do not
+        // hide an input freeze: recovery is allowed only after observed active
+        // movement, shots, focus and a playable frame immediately before death.
+        assert(s.focused&&lastAlive.canPlay&&s.shotsFired>initialShots&&s.movingSeconds>initialMoving);
+        const prior=s.answers,damage=s.damage,wave=s.wave;
+        await t.cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});t.joystickStarted=false;
+        s=await poll(t,x=>x.defeated&&x.defeatVisible&&x.inputReady&&!x.pointerPressed);
+        if(t.target.phone){
+          s=await safariPause(t);s=await recoverSafari(t,s,s.restartCenter,0);
+          assert(s.defeated&&s.playerHealth===0&&!s.canPlay);await clearSafariObservation(t);
+          passed('Phone touch recovery on Retry consumes the gesture and keeps the defeat pause');
+        }
+        await t.page.waitForTimeout(550);s=await click(t,s,s.restartCenter);
+        s=await poll(t,x=>x.wave===wave&&!x.defeated&&x.canPlay);
+        assert.deepStrictEqual(s.answers,prior);assert(s.damage===damage&&s.playerHealth===100&&s.enemyCount===wave+1);
+        passed('Ordinary touch Retry after active-combat defeat preserves answers/rewards and restores only the unfinished wave', {phone:t.target.phone,wave});
+        return clearWave(t,holdOnFinal,retries+1);
       }
       assert(!s.defeated,'Defeated while clearing wave');assert(s.questionPaused,'No question after clear');
       assert(s.answers.length===s.wave-1 && !s.victory && !s.onBreak);
@@ -255,7 +320,11 @@ function passed(name, details) { result.checks.push({ name, details }); console.
     s=await answer(d,s,true);
     assert(s.wave===2 && s.answers.length===1 && s.damage===35);
     s=await poll(d,x=>x.defeated&&x.defeatVisible,45000);
-    const prior=s.answers;await d.page.waitForTimeout(500);s=await click(d,s,s.restartCenter);
+    const prior=s.answers;
+    s=await safariPause(d);s=await recoverSafari(d,s,s.restartCenter,0);
+    assert(s.defeated&&s.defeatVisible&&s.playerHealth===0&&!s.canPlay);
+    await clearSafariObservation(d);passed('Safari focus recovery on Retry preserves defeat pause and cannot restart with the recovery gesture');
+    await d.page.waitForTimeout(550);s=await click(d,s,s.restartCenter);
     s=await poll(d,x=>x.wave===2&&!x.defeated);
     assert.deepStrictEqual(s.answers,prior);assert(s.damage===35 && s.playerHealth===100 && s.enemyCount===3);
     assert(s.projectiles===0 && s.effects===0 && s.shotsFired===0 && !s.questionPaused);
@@ -265,7 +334,10 @@ function passed(name, details) { result.checks.push({ name, details }); console.
     passed('Repeated defeat/retry preserves progress without duplicating rewards');
     for(let i=0;i<2;i++) {s=await clearWave(d,i===0);s=await answer(d,s);}
     const win=s;s=await freeze(d,s);assert(s.answers.length===3);
-    s=await click(d,s,s.restartCenter);s=await poll(d,x=>x.wave===1&&!x.victory);
+    s=await safariPause(d);s=await recoverSafari(d,s,s.restartCenter,0);
+    assert(s.victory&&s.victoryVisible&&!s.canPlay);
+    await clearSafariObservation(d);passed('Safari focus recovery on New Run preserves Victory pause and cannot reset progress');
+    await d.page.waitForTimeout(550);s=await click(d,s,s.restartCenter);s=await poll(d,x=>x.wave===1&&!x.victory);
     assert(s.answers.length===0 && s.damage===25 && s.playerHealth===100 && s.enemyCount===2 && s.shotsFired===0);
     passed('New Run clears every answer, reward and wave progress');
     // Complete another run in the same browser to catch static-session leakage.
@@ -273,7 +345,29 @@ function passed(name, details) { result.checks.push({ name, details }); console.
     await d.context.close();
     for(const phone of [false,true]){
       const t=await open(true,phone);t.cdp=await t.context.newCDPSession(t.page);
-      s=await poll(t,x=>x.wave===1);s=await clearWave(t);s=await answer(t,s);
+      s=await poll(t,x=>x.wave===1);
+      if(phone){
+        s=await safariPause(t);
+        passed('Exact Safari deadlock: visible DOM focus 0, Unity/bridge/gate 1/0/0, scale 0, releasewait 1 with no held touches');
+        const before=s.shotsFired;
+        await t.page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,get:()=>true});document.dispatchEvent(new Event('visibilitychange'));});
+        s=await click(t,s,s.attackCenter);assert(!s.bridgeFocus&&!s.focused&&s.timeScale===0&&s.waitingForRelease&&s.shotsFired===before);
+        await t.page.evaluate(()=>{delete document.hidden;document.dispatchEvent(new Event('visibilitychange'));});
+        s=await poll(t,x=>!x.bridgeFocus&&x.timeScale===0&&!x.pointerPressed);
+        passed('Background touches cannot recover focus or fire and becoming visible with DOM focus false does not resume');
+        s=await recoverSafari(t,s,s.attackCenter,1);assert(s.canPlay&&!s.hasDestination);
+        passed('Trusted visible Attack recovery is consumed until release; saved combat clock resumes despite DOM focus staying false');
+        await clearSafariObservation(t);s=await click(t,s,s.attackCenter);assert(s.shotsFired===before+1);
+        passed('A fresh Attack after recovery fires normally exactly once');
+      }
+      s=await clearWave(t);
+      if(phone){
+        s=await safariPause(t);s=await recoverSafari(t,s,s.answerCenters[0],0);
+        assert(s.questionPaused&&!s.canPlay&&s.selectedAnswer===-1&&s.answers.length===0);
+        await clearSafariObservation(t);s=await poll(t,x=>x.questionInputReady);
+        s=await freeze(t,s);passed('Safari question recovery preserves paused clock and rejects the recovery selection; deliberate guarded answers still work');
+      }
+      s=await answer(t,s);
       // Rotate an emulated portrait phone into landscape during Question 2.
       s=await clearWave(t);
       if(phone){await t.page.setViewportSize({width:844,height:390});await t.page.waitForTimeout(500);s=await t.snapshot();}

@@ -9,7 +9,20 @@ mergeInto(LibraryManager.library, {
     state.focused = document.hasFocus() && !document.hidden;
     state.inside = canvas.matches(':hover');
     var cancel = function () { state.inside = false; state.epoch++; };
+    // Safari can deliver foreground touches while document.hasFocus() stays
+    // false and no window focus event arrives. A trusted canvas down is evidence
+    // of visible interaction, but its new epoch makes this a recovery gesture:
+    // Unity must cancel it and observe release before accepting fresh input.
+    var recover = function (event) {
+      if (document.hidden || !event.isTrusted || state.focused) return;
+      state.focused = true;
+      cancel();
+    };
     canvas.style.touchAction = 'none';
+    canvas.addEventListener('touchstart', recover, { passive: true });
+    canvas.addEventListener('pointerdown', function (event) {
+      if (event.pointerType === 'touch' || event.button === 0) recover(event);
+    }, { passive: true });
     canvas.addEventListener('pointerenter', function () { state.inside = true; });
     canvas.addEventListener('pointermove', function () { state.inside = true; });
     canvas.addEventListener('pointerleave', function (event) {
