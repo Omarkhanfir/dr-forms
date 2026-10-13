@@ -9,16 +9,17 @@ Dr.forms is a SaaS platform for creating and completing forms, quizzes, homework
 
 Creators configure question intervals and the rules governing upgrades in the game experience.
 
-The current local prototype uses this pacing: Wave 1 → Question 1 → Submit →
-Wave 2 → Question 2 → Submit → Wave 3 → Question 3 → Submit → Victory.
-Each cleared wave waits for its answer; Submit saves it, grants its reward once,
-and automatically resumes the next wave after the existing three-second break,
-or shows Victory after the final answer. No Continue button or reward screen
-is required. No timed mid-combat question trigger runs. This is a prototype
-pacing choice, not a
-restriction on future creator-configured intervals. The prototype validates
-exactly three waves and three questions, each with three options. Question
-content, wave enemy counts, and reward settings remain independent.
+The current local prototype has three connected dungeon rooms along a forward
+route. Each room runs one easy encounter (2/3/4 enemies), then presents its
+matching question. Submit saves the answer, grants its reward once, and returns
+directly to gameplay while the room's exit animates open. The player must move
+through the doorway and passage to start the next room's encounter. The final
+answer opens the final exit; crossing it triggers Victory. Locked exits block
+movement, and future rooms have no active enemies. There is no automatic wave
+break, Continue button, reward screen or timed mid-combat question trigger.
+This prototype pacing does not restrict future creator-configured intervals.
+The prototype validates three encounters and three questions, each with three
+options. Question content, enemy counts and rewards remain independent.
 
 Questions freeze gameplay and require released pointers/submit keys followed by
 a configurable input guard (default 0.5 seconds), a fresh option selection, and
@@ -28,15 +29,15 @@ submission. Each answer grants one equal damage upgrade by default, with
 correctness feedback off. The progress HUD shows the damage reward after Submit.
 Resuming clears input and requires neutral pointers and fresh desktop movement,
 so the submission gesture cannot fire an attack or restore an old destination.
-Victory requires all three cleared waves and submitted answers.
+Victory requires all three cleared rooms and submitted answers plus crossing the final exit.
 
-Defeat Retry restores health and restarts only the unfinished wave, preserving
+Defeat Retry restores health and restarts only the current room, preserving
 completed answers and earned upgrades. Victory New Run resets progress and base
 stats. Progress exists only in memory; browser refresh/close or application
 restart does not preserve it. No backend, persistence, hosting, or pricing
 decision is implied.
 
-Prototype verification (2026-10-13): the Web development build succeeded, and
+Earlier single-arena verification (2026-10-13): the Web development build succeeded, and
 54 actual Chrome mouse/keyboard/emulated-touch browser checks passed across
 four complete runs and two defeat/retry cycles. Question/Victory
 screenshots, build logs and results are outside Git; see [HANDOFF.md](HANDOFF.md)
@@ -78,7 +79,7 @@ Start with one game: the Unity 3D action RPG. Design the platform to support add
 The current game uses an original procedural garden fantasy style, an adventurer
 with a growing crystal wand, mushroom chasers, and one slower telegraphed flower
 mage in waves two and three. Counts remain 2/3/4, with three equal-reward questions
-and automatic Submit progression. Damage protection follows Play, Resume,
+and Submit-unlocked room exits. Damage protection follows Play, Resume,
 question submission and focus recovery. Contact damage is modest and spaced.
 
 Play activates procedural browser audio. Pause/Resume and Restart/New Run are

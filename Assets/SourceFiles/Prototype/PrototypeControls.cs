@@ -14,7 +14,7 @@ namespace DrForms.Prototype
         public bool GameplayEnabled { get; private set; } = true;
         public bool InputReady => HasFocus && epoch == PrototypeBrowserInput.Epoch
             && !waitingForRelease && Time.frameCount > inputResumeFrame;
-        public const string BuildId = "GARDEN-QUEST-4";
+        public const string BuildId = "DUNGEON-ROUTE-1";
         public bool Started { get; private set; }
         public bool ManualPaused { get; private set; }
         public bool CanPlay => GameplayEnabled && Started && !ManualPaused && InputReady;
@@ -131,18 +131,17 @@ namespace DrForms.Prototype
                 endTitle.text = playerHealth.IsDefeated ? "TRY AGAIN" : "QUEST COMPLETE";
                 if (summaryDamage != GetComponent<PrototypeCombat>().Damage || wasDefeated != playerHealth.IsDefeated) {
                 summaryDamage = GetComponent<PrototypeCombat>().Damage; wasDefeated = playerHealth.IsDefeated;
-                summary.text = playerHealth.IsDefeated ? "Your answers and wand upgrades are safe.\nRetry the unfinished wave." : "Three waves cleared | Three answers saved\nWand power " + GetComponent<PrototypeCombat>().Damage + " | Ready for a new adventure?"; }
+                summary.text = playerHealth.IsDefeated ? "Your answers and wand upgrades are safe.\nRetry the current room." : "Three rooms cleared | Three answers saved\nWand power " + GetComponent<PrototypeCombat>().Damage + " | Ready for a new adventure?"; }
                 graceLabel.text = playerHealth.GraceActive && CanPlay ? "SHIELD | Safe for a moment" : "";
                 pauseButton.gameObject.SetActive(Started && GameplayEnabled && !ManualPaused);
                 muteLabel.text = PrototypeAudio.Muted ? "Sound: off" : "Sound: on";
                 menuMuteLabel.text = muteLabel.text;
                 if (!Started || ManualPaused) menu.SetAsLastSibling();
                 restartButton.GetComponentInChildren<Text>().text = playerHealth.IsDefeated ? "Retry" : "New Run";
-                var breakTick = waves != null && waves.OnBreak ? Mathf.CeilToInt(waves.BreakRemaining) : -1;
-                if (waves != null && (lastWave != waves.WaveNumber || lastBreak != breakTick)) {
-                lastWave = waves.WaveNumber; lastBreak = breakTick;
-                waveLabel.text = waves == null ? "" : "Wave " + waves.WaveNumber + " / " + waves.WaveCount
-                    + (waves.OnBreak ? " — Next wave in " + Mathf.CeilToInt(waves.BreakRemaining) + "s" : ""); }
+                if (waves != null && (lastWave != waves.WaveNumber || lastBreak != (waves.ExitUnlocked ? 1 : 0))) {
+                lastWave = waves.WaveNumber; lastBreak = waves.ExitUnlocked ? 1 : 0;
+                waveLabel.text = "Room " + waves.WaveNumber + " / " + waves.WaveCount
+                    + (waves.ExitUnlocked ? "\nExit open: forward" : "\nExit locked"); }
             }
             if (!HasFocus || epoch != PrototypeBrowserInput.Epoch)
             {
@@ -319,8 +318,8 @@ namespace DrForms.Prototype
             healthFill.raycastTarget = false;
             healthLabel = Label("Player Health Text", healthBar, "Health", 16);
             var waveBar = Rect("Wave Status", safeArea, new Vector2(0, 1), new Vector2(0, 1),
-                new Vector2(95, -105), new Vector2(170, 24));
-            waveLabel = Label("Wave Text", waveBar, "Wave 1 / 3", 16);
+                new Vector2(95, -115), new Vector2(170, 44));
+            waveLabel = Label("Wave Text", waveBar, "Room 1 / 3", 16);
 
             defeatPanel = Rect("Defeat Screen", safeArea, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             defeatPanel.gameObject.AddComponent<Image>().color = new Color(0.02f, 0.04f, 0.08f, 0.94f);

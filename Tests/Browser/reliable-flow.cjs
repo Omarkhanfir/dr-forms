@@ -74,9 +74,10 @@ function passed(name, details) { result.checks.push({ name, details }); console.
         assert(target.states.length > before, 'No state received');
         const s = target.states.at(-1);
         groundCoverage(s);
-        assert(Math.abs(s.position.x) < 9.7 && Math.abs(s.position.z) < 9.7, 'Escaped arena');
+        assert(s.playerFloorScreen.x>0&&s.playerFloorScreen.x<s.screenWidth&&s.playerFloorScreen.y>0&&s.playerFloorScreen.y<s.screenHeight,'Camera lost player framing');
+        assert(Math.abs(s.position.x) < 9.7 && s.position.z > -9.7 && s.position.z < 62, 'Escaped arena');
         assert(Math.abs(s.position.y - 1) < 0.15, 'Player left floor');
-        if(s.enemyAlive) { assert(Math.abs(s.enemyPosition.x)<9.6 && Math.abs(s.enemyPosition.z)<9.6, 'Enemy escaped arena'); assert(Math.abs(s.enemyPosition.y-1)<0.15, 'Enemy left floor'); }
+        if(s.enemyAlive) { assert(Math.abs(s.enemyPosition.x)<9.6 && s.enemyPosition.z > -9.6 && s.enemyPosition.z < 58, 'Enemy escaped arena'); assert(Math.abs(s.enemyPosition.y-1)<0.15, 'Enemy left floor'); }
         return s;
       };
       const client = async (s, point) => {
@@ -165,7 +166,9 @@ function passed(name, details) { result.checks.push({ name, details }); console.
       if(t.target.touch) await t.page.touchscreen.tap(p.x,p.y);
       else if(count===2) await t.page.mouse.dblclick(p.x,p.y,{delay:35});
       else await t.page.mouse.click(p.x,p.y);
-      await t.page.waitForTimeout(90);
+      // Scene reload and its first physics step can briefly settle the controller above ground.
+      const reload=(s.defeated||s.victory)&&point.x===s.restartCenter.x&&point.y===s.restartCenter.y;
+      await t.page.waitForTimeout(reload?650:90);
       return t.snapshot();
     };
     const freeze=async(t,s)=>{
@@ -206,6 +209,72 @@ function passed(name, details) { result.checks.push({ name, details }); console.
     };
     // All actions below are browser mouse/keyboard/CDP touch events. SendMessage is
     // used only by snapshot() for the development build's read-only observation.
+    async function traverse(t,s) {
+      const room=s.room, starts=s.encounterStarts, shots=s.shotsFired;
+      await t.page.waitForTimeout(1000);s=await t.snapshot();
+      assert(s.room===room&&!s.victory&&s.doorOpening===1&&s.encounterStarts===starts);
+      passed('Door animates open; waiting after Submit never starts another encounter or Victory',{room});
+      const end=Date.now()+20000;
+      while(s.room===room&&!s.victory&&Date.now()<end) {
+        const goal={x:0,z:room*24+(room===2?12.5:15)};
+        if(t.target.touch){
+          const dx=goal.x-s.position.x,dz=goal.z-s.position.z,len=Math.hypot(dx,dz);
+          const center=await t.client(s,s.joystickCenter);
+          const j=await t.client(s,{x:s.joystickCenter.x+dx/len*s.joystickRadius*.95,y:s.joystickCenter.y+dz/len*s.joystickRadius*.95});
+          if(!t.joystickStarted){await t.cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...center,id:1}]});t.joystickStarted=true;}
+          await t.cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...j,id:1}]});
+        }else{
+          // Use a nearby visible waypoint; only real pointer movement resamples world ground.
+          const step=Math.min(5,Math.hypot(goal.x-s.position.x,goal.z-s.position.z));
+          const len=Math.hypot(goal.x-s.position.x,goal.z-s.position.z);
+          const p=await t.client(s,floorPoint(s,{x:s.position.x+(goal.x-s.position.x)/len*step,z:s.position.z+(goal.z-s.position.z)/len*step}));
+          await t.page.mouse.move(p.x+(Date.now()%2?2:-2),p.y);
+        }
+        await t.page.waitForTimeout(80);s=await t.snapshot();
+        if(s.position.z>room*24+8&&s.position.z<room*24+13&&!t.target['routeCapture'+room]) {
+          t.target['routeCapture'+room]=true;
+          await t.page.screenshot({path:path.join(artifacts,`route-${t.target.phone?'phone':t.target.touch?'tablet':'desktop'}-passage-${room+1}.png`)});
+        }
+      }
+      if(t.target.touch){await t.cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});t.joystickStarted=false;}
+      assert(room===2?s.victory:s.room===room+1&&s.encounterStarts===starts+1,'Physical doorway crossing did not advance once');
+      passed('Physical passage crossing advances exactly once',{room,position:s.position});
+      if(room<2) {
+        await t.page.waitForTimeout(350);const later=await t.snapshot();
+        assert(later.room===room+1&&later.encounterStarts===starts+1&&later.enemyCount===room+3&&!later.exitUnlocked);
+        passed('Entry boundary does not duplicate encounter and new exit remains locked',{room:later.room});
+        s=later;
+        if(!t.target.touch) {
+          await t.page.waitForTimeout(900);const settled=await t.snapshot();
+          await t.page.waitForTimeout(400);const still=await t.snapshot();
+          assert(dist(settled.position,still.position)<.015&&dist(settled.destination,still.destination)<.001);
+          passed('Stationary desktop pointer retains its world destination as route camera settles');
+          s=still;
+        }
+        if(t.target.touch&&!t.target.phone&&room===0) {
+          // Backtrack into the cleared room using actual joystick events.
+          const move=async direction=>{
+            const center=await t.client(s,s.joystickCenter);
+            const thumb=await t.client(s,{x:s.joystickCenter.x,y:s.joystickCenter.y+direction*s.joystickRadius*.95});
+            await t.cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...center,id:1}]});
+            await t.cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...thumb,id:1}]});
+          };
+          await move(-1);await t.page.waitForTimeout(1400);
+          await t.cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});s=await t.snapshot();
+          assert(s.position.z<14&&s.room===1);
+          const health=s.playerHealth,enemy=s.enemyPosition,ranged=s.rangedShots;
+          await t.page.waitForTimeout(1200);s=await t.snapshot();
+          assert(s.playerHealth===health&&dist(s.enemyPosition,enemy)<.001&&s.enemyBolts===0);
+          assert.deepStrictEqual(s.rangedShots,ranged);
+          passed('Enemies stop moving and attacking while player backtracks into inactive cleared room');
+          await move(1);await t.page.waitForTimeout(1700);
+          await t.cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});s=await t.snapshot();
+          assert(s.room===1&&s.encounterStarts===starts+1&&s.enemyCount===3);
+          passed('Re-entering current room does not spawn its encounter twice');
+        }
+      }
+      return s;
+    }
     async function clearWave(t,holdOnFinal=false,retries=0){
       let s=await t.snapshot(),lastClick=-1,held=false,heldAt=0,lastAlive=s;
       const initialShots=s.shotsFired,initialMoving=s.movingSeconds;
@@ -213,7 +282,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
       let observedTelegraph=false, observedRangedShot=false;
       // Continue around the perimeter after answering instead of resetting the
       // goal across the arena and running through a random chaser cluster.
-      let angle=Math.hypot(s.position.x,s.position.z)>1?Math.atan2(s.position.z,s.position.x)+Math.PI/6:0;
+      let angle=Math.hypot(s.position.x,s.position.z)>1?Math.atan2(s.position.z-s.room*24,s.position.x)+Math.PI/6:0;
       const end=Date.now()+100000;
       while(!s.questionPaused && !s.defeated && Date.now()<end){
         const framing=s.screenWidth>s.screenHeight?'landscape':'portrait';
@@ -228,8 +297,8 @@ function passed(name, details) { result.checks.push({ name, details }); console.
         }
         observedRangedShot ||= s.rangedShots.some(n=>n>0);
         assert(s.projectiles<=8 && s.projectilePool<=8 && s.effects<=24 && s.enemyBolts<=4);
-        let goal={x:6*Math.cos(angle),z:6*Math.sin(angle)};
-        if(dist(s.position,goal)<1.2){angle+=Math.PI/6;goal={x:6*Math.cos(angle),z:6*Math.sin(angle)};}
+        let goal={x:6*Math.cos(angle),z:s.room*24+6*Math.sin(angle)};
+        if(dist(s.position,goal)<1.2){angle+=Math.PI/6;goal={x:6*Math.cos(angle),z:s.room*24+6*Math.sin(angle)};}
         if(t.target.touch){
           const norm=Math.hypot(s.forward.x,s.forward.z),fx=s.forward.x/norm,fz=s.forward.z/norm;
           const dx=goal.x-s.position.x,dz=goal.z-s.position.z,len=Math.hypot(dx,dz);
@@ -325,7 +394,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
       assert(s.answers[n]===chosen,'Submit saved a different answer from the selected option');
       assert(s.shotsFired===shots && s.hitsApplied===hits && dist(s.position,position)<.001 && !s.hasDestination,
         'Submission leaked into gameplay input');
-      assert(n===2?s.victory:s.onBreak,'Submit did not automatically complete the wave');
+      assert(!s.victory && s.exitUnlocked && !s.onBreak,'Submit must unlock exit and return to gameplay');
       // Repeat taps at the removed Submit screen and keyboard spam cannot
       // duplicate answers/rewards, fire attacks, or restore an old destination.
       // Keyboard submission leaves the mouse over an option. Moving it to the
@@ -337,14 +406,15 @@ function passed(name, details) { result.checks.push({ name, details }); console.
       await t.page.waitForTimeout(650);s=await t.snapshot();
       assert(s.shotsFired===shots && dist(s.position,position)<.001 && !s.hasDestination);
       passed('Submit grants exactly one reward and resumes automatically without attack or stale movement', {wave:s.wave,touch:t.target.touch});
+      s=await traverse(t,s);
       if(n===2){s=await poll(t,x=>x.victory && x.victoryVisible);assert(s.answers.length===3 && s.wave===3 && s.enemyCount===0);
         await t.page.screenshot({path:path.join(artifacts,`flow-${t.target.touch?(t.target.phone?'phone':'tablet'):'desktop'}-victory.png`)});
-        passed('Final Submit shows Victory with all three answers and rewards');
+        passed('Crossing final exit shows Victory with all three answers and rewards');
       }else {
         if(!t.target.touch&&!combatFocusChecked){
           const cdp=await t.context.newCDPSession(t.page);await cdp.send('Emulation.setFocusEmulationEnabled',{enabled:false});
           const other=await t.context.newPage();await other.goto('about:blank');await other.bringToFront();await t.page.waitForTimeout(350);
-          const hidden=await t.snapshot();assert(!hidden.focused&&hidden.onBreak);await t.page.waitForTimeout(1000);const later=await t.snapshot();
+          const hidden=await t.snapshot();assert(!hidden.focused);await t.page.waitForTimeout(1000);const later=await t.snapshot();
           assert(later.time===hidden.time&&later.breakRemaining===hidden.breakRemaining&&later.wave===hidden.wave);
           await other.close();await t.page.bringToFront();await t.page.waitForTimeout(150);const returned=await t.snapshot();
           assert(returned.focused&&!returned.hasDestination&&returned.wave===hidden.wave);
@@ -375,7 +445,8 @@ function passed(name, details) { result.checks.push({ name, details }); console.
     await d.page.waitForTimeout(550);s=await click(d,s,s.restartCenter);
     s=await poll(d,x=>x.wave===2&&!x.defeated);
     assert.deepStrictEqual(s.answers,prior);assert(s.damage===35 && s.playerHealth===100 && s.enemyCount===3);
-    assert(s.projectiles===0 && s.effects===0 && s.shotsFired===0 && !s.questionPaused);
+    assert(s.projectiles===0 && s.effects<=24 && s.shotsFired===0 && !s.questionPaused && !s.hasDestination);
+    assert(s.room===1&&Math.abs(s.position.z-17)<.15&&Math.abs(s.position.x)<.15);
     passed('Retry restores only unfinished wave, health/transients, retaining prior answer and reward');
     s=await poll(d,x=>x.defeated&&x.defeatVisible,45000);s=await click(d,s,s.restartCenter);
     s=await poll(d,x=>x.wave===2&&!x.defeated);assert(s.answers.length===1&&s.damage===35&&s.playerHealth===100&&s.enemyCount===3);
@@ -394,6 +465,18 @@ function passed(name, details) { result.checks.push({ name, details }); console.
     for(const phone of [false,true]){
       const t=await open(true,phone);t.cdp=await t.context.newCDPSession(t.page);
       s=await poll(t,x=>x.wave===1);
+      if(!phone){
+        const center=await t.client(s,s.joystickCenter);
+        const up=await t.client(s,{x:s.joystickCenter.x,y:s.joystickCenter.y+s.joystickRadius*.95});
+        await t.cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...center,id:1}]});
+        await t.cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...up,id:1}]});
+        await t.page.waitForTimeout(2800);s=await t.snapshot();
+        await t.cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+        assert(s.room===0 && s.wave===1 && !s.exitUnlocked && s.doorOpening===0 && s.position.z<9.4 && s.position.z>8);
+        assert(s.encounterStarts===1 && s.answers.length===0);
+        await t.page.screenshot({path:path.join(artifacts,'route-locked-door.png')});
+        passed('Physical movement into locked exit is blocked; next encounter remains inactive');
+      }
       if(phone){
         s=await safariPause(t);
         passed('Exact Safari deadlock: visible DOM focus 0, Unity/bridge/gate 1/0/0, scale 0, releasewait 1 with no held touches');

@@ -9,7 +9,6 @@ namespace DrForms.Prototype
     {
         [SerializeField] private PrototypeEnemy enemyTemplate;
         [SerializeField] private int[] enemyCounts = { 2, 3, 4 };
-        [SerializeField, Min(0)] private float breakSeconds = 3;
         [SerializeField, Min(1.2f)] private float safePlayerDistance = 5;
         [SerializeField] private Vector2 arenaMinimum = new Vector2(-10, -10);
         [SerializeField] private Vector2 arenaMaximum = new Vector2(10, 10);
@@ -17,15 +16,24 @@ namespace DrForms.Prototype
         private readonly List<PrototypeTarget> living = new List<PrototypeTarget>();
         private PrototypePlayerHealth player;
         private PrototypeControls controls;
-        private float nextWaveTime;
         private PrototypeQuestions questions;
         private bool awaitingQuestion;
-        private static int completedWaves;
+        private static int currentRoom;
+        private readonly Transform[] doors = new Transform[3];
+        private readonly BoxCollider[] doorColliders = new BoxCollider[3];
+        private readonly float[] doorOpen = new float[3];
+        private GameObject route;
+        public int RoomIndex => currentRoom;
+        public bool ExitUnlocked => questions.AnswerCount >= currentRoom + 1;
+        public float DoorOpening => doorOpen[currentRoom];
+        public int EncounterStarts { get; private set; }
+        public static float RoomCenter(int index) => index * 24;
+
         public int WaveNumber { get; private set; }
         public int WaveCount => enemyCounts.Length;
         public bool Victory { get; private set; }
-        public bool OnBreak { get; private set; }
-        public float BreakRemaining => OnBreak ? Mathf.Max(0, nextWaveTime - Time.time) : 0;
+        public bool OnBreak => false;
+        public float BreakRemaining => 0;
         public Vector3[] LastSpawns { get; private set; } = new Vector3[0];
         public Vector3 SpawnPlayerPosition { get; private set; }
         public float SafePlayerDistance => safePlayerDistance;
@@ -35,46 +43,106 @@ namespace DrForms.Prototype
             player = GetComponent<PrototypePlayerHealth>();
             controls = GetComponent<PrototypeControls>();
             questions = GetComponent<PrototypeQuestions>();
-            WaveNumber = completedWaves;
+            WaveNumber = currentRoom;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        public static void NewRun() => completedWaves = 0;
+        public static void NewRun() => currentRoom = 0;
 
         public void CompleteAnsweredWave()
         {
             if (!awaitingQuestion || questions.AnswerCount != WaveNumber || player.IsDefeated) return;
             awaitingQuestion = false;
-            completedWaves = WaveNumber;
-            if (WaveNumber == WaveCount)
-            {
-                Victory = true;
-                PrototypeAudio.Play(3);
-                Time.timeScale = 0;
-                controls.SetGameplayEnabled(false);
-                foreach (var projectile in FindObjectsByType<PrototypeProjectile>()) projectile.Cancel();
-                PrototypeEnemyBolt.Clear();
-                return;
-            }
-            OnBreak = true;
-            nextWaveTime = Time.time + breakSeconds;
             controls.ResumeAfterQuestion();
         }
+
+        private void Start()
+        {
+            route = new GameObject("Three Room Dungeon Route");
+            var floor = GameObject.Find("Arena Ground");
+            floor.transform.position = new Vector3(0, -.25f, 24);
+            floor.transform.localScale = new Vector3(22, .5f, 80);
+            foreach (var name in new[] { "North Wall", "South Wall", "East Wall", "West Wall" })
+                GameObject.Find(name).SetActive(false);
+            // Remove the old practice obstacle from the forward route.
+            var practice = GameObject.Find("Stationary Target");
+            if (practice != null) practice.SetActive(false);
+            for (int room = 0; room < 3; room++)
+            {
+                float z = RoomCenter(room);
+                Barrier("Room left boundary", new Vector3(-10, .5f, z), new Vector3(1, 1, 20));
+                Barrier("Room right boundary", new Vector3(10, .5f, z), new Vector3(1, 1, 20));
+                foreach (float edge in new[] { z - 10, z + 10 })
+                    foreach (float x in new[] { -6f, 6f })
+                        Barrier("Doorway shoulder", new Vector3(x, .5f, edge), new Vector3(8, 1, 1));
+                foreach (float x in new[] { -2.5f, 2.5f })
+                {
+                    Barrier("Passage boundary", new Vector3(x, .5f, z + 12), new Vector3(1, 1, 4));
+                    Barrier("Door frame", new Vector3(x, 1.5f, z + 10), new Vector3(.6f, 3, .8f));
+                }
+                var door = Barrier("Locked room " + (room + 1) + " exit", new Vector3(0, 1.4f, z + 10), new Vector3(4, 2.8f, .6f), 3);
+                doors[room] = door.transform; doorColliders[room] = door.GetComponent<BoxCollider>();
+                if (questions.AnswerCount > room) { doorOpen[room] = 1; door.transform.position += Vector3.up * 3.2f; doorColliders[room].enabled = false; }
+                // Flat directional markers serve navigation rather than decoration.
+                for (int n = 0; n < 3; n++)
+                    PrototypeCharacterVisual.Part(route.transform, "Forward route marker", PrimitiveType.Cube,
+                        new Vector3(0, .03f, z + 5 + n), new Vector3(1.2f - n * .3f, .04f, .3f), 8);
+            }
+            Barrier("Route start", new Vector3(0, .5f, -10), new Vector3(4, 1, 1));
+            Barrier("Final passage left", new Vector3(-2.5f, .5f, 60), new Vector3(1, 1, 4));
+            Barrier("Final passage right", new Vector3(2.5f, .5f, 60), new Vector3(1, 1, 4));
+            Barrier("Route end", new Vector3(0, .5f, 62), new Vector3(6, 1, 1));
+            var controller = GetComponent<CharacterController>();
+            controller.enabled = false;
+            transform.position = new Vector3(0, 1, RoomCenter(currentRoom) - (currentRoom == 0 ? 0 : 7));
+            controller.enabled = true;
+            Camera.main.GetComponent<PrototypeCameraFollow>().ResetComposition();
+        }
+
+        private GameObject Barrier(string name, Vector3 position, Vector3 scale, int color = 10)
+        {
+            // Keep the primitive's collider: visual Part intentionally destroys its collider.
+            var part = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            part.name = name; part.transform.SetParent(route.transform, false);
+            part.transform.position = position; part.transform.localScale = scale;
+            var renderer = part.GetComponent<Renderer>();
+            renderer.sharedMaterial = PrototypeCharacterVisual.Paint(color);
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return part;
+        }
+
+        private void OnDestroy() { if (route != null) Destroy(route); }
 
         private void Update()
         {
             if (player.IsDefeated || Victory || !controls.CanPlay) return;
+            for (int room = 0; room < 3; room++)
+            {
+                if (questions.AnswerCount <= room || doors[room] == null) continue;
+                doorOpen[room] = Mathf.MoveTowards(doorOpen[room], 1, Time.deltaTime / .85f);
+                doors[room].position = new Vector3(0, 1.4f + doorOpen[room] * 3.2f, RoomCenter(room) + 10);
+                doorColliders[room].enabled = doorOpen[room] < 1;
+            }
+            if (transform.position.z < RoomCenter(currentRoom) - 10 || transform.position.z > RoomCenter(currentRoom) + 10) PrototypeEnemyBolt.Clear();
             if (awaitingQuestion) return;
-            if (living.Count == 0 && WaveNumber == completedWaves && !OnBreak) { SpawnWave(); return; }
+            if (ExitUnlocked)
+            {
+                if (DoorOpening < 1 || Mathf.Abs(transform.position.x) > 2 || transform.position.z < RoomCenter(currentRoom) + (currentRoom == 2 ? 12 : 14)) return;
+                if (currentRoom == 2)
+                {
+                    Victory = true; PrototypeAudio.Play(3); Time.timeScale = 0;
+                    controls.SetGameplayEnabled(false); PrototypeEnemyBolt.Clear();
+                    foreach (var projectile in FindObjectsByType<PrototypeProjectile>()) projectile.Cancel();
+                    return;
+                }
+                currentRoom++;
+                WaveNumber = currentRoom;
+            }
+            if (living.Count == 0 && WaveNumber == currentRoom) { SpawnWave(); return; }
             living.RemoveAll(target => target == null || target.Health <= 0);
             if (living.Count > 0) return;
-            if (!OnBreak)
-            {
-                awaitingQuestion = true;
-                questions.OpenForWave(WaveNumber);
-                return;
-            }
-            if (Time.time >= nextWaveTime) SpawnWave();
+            awaitingQuestion = true;
+            questions.OpenForWave(WaveNumber);
         }
 
         private void SpawnWave()
@@ -87,7 +155,7 @@ namespace DrForms.Prototype
             var margin = Mathf.Max(boundaryMargin, radius);
             for (var x = arenaMinimum.x + margin; x <= arenaMaximum.x - margin; x += radius * 3)
                 for (var z = arenaMinimum.y + margin; z <= arenaMaximum.y - margin; z += radius * 3)
-                    candidates.Add(new Vector3(x, 1, z));
+                    candidates.Add(new Vector3(x, 1, z + RoomCenter(currentRoom)));
             var count = Mathf.Max(1, enemyCounts[WaveNumber]);
             while (candidates.Count > 0 && positions.Count < count)
             {
@@ -117,7 +185,7 @@ namespace DrForms.Prototype
                 living.Add(enemy.GetComponent<PrototypeTarget>());
             }
             WaveNumber++;
-            OnBreak = false;
+            EncounterStarts++;
         }
     }
 }

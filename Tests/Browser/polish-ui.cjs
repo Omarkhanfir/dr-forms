@@ -59,7 +59,10 @@ const pass=(name,data)=>{result.checks.push({name,data});console.log('PASS: '+na
    pass('Landscape resize and emulated safe-area padding retain menu/mute state',{box});
   }
   s=await state();s=await click(s,s.playCenter);assert(s.started&&s.muted);
-  await page.waitForTimeout(350);s=await state();const before=s.shotsFired;
+  // With the practice target removed, wait for a real room enemy to reach wand range.
+  let deadline=Date.now()+12000;
+  do {await page.waitForTimeout(100);s=await state();} while(Math.hypot(s.enemyPosition.x-s.position.x,s.enemyPosition.z-s.position.z)>s.range-.5 && Date.now()<deadline);
+  const before=s.shotsFired;
   s=await click(s,phone?s.attackCenter:s.playerFloorScreen);
   assert(s.shotsFired===before+1);
   await page.waitForTimeout(550);assert(await page.evaluate(()=>window.drFormsAudio.tones===0));

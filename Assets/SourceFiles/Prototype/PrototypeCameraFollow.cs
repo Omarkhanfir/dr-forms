@@ -9,7 +9,7 @@ namespace DrForms.Prototype
         [SerializeField, Min(0.01f)] private float smoothTime = 0.2f;
         private Vector3 velocity;
 
-        private void OnEnable()
+        public void ResetComposition()
         {
             velocity = Vector3.zero;
             if (target == null) return;
@@ -17,9 +17,10 @@ namespace DrForms.Prototype
             transform.rotation = Quaternion.LookRotation(-offset, Vector3.up);
         }
 
-        // Scenery spans +/-80; clamp the followed point inside the original arena.
-        private Vector3 Composition() => new Vector3(Mathf.Clamp(target.position.x, -9.6f, 9.6f),
-            target.position.y, Mathf.Clamp(target.position.z, -9.6f, 9.6f));
+        // Frame each room and smoothly reveal the forward route as the player advances.
+        private Vector3 Composition() => new Vector3(Mathf.Clamp(target.position.x, -8, 8), target.position.y, Mathf.Clamp(target.position.z + 3, -6, 63));
+
+        private void OnEnable() => ResetComposition();
 
         private void LateUpdate()
         {

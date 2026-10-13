@@ -154,6 +154,10 @@ namespace DrForms.Prototype
                 projectilePositions = System.Array.ConvertAll(FindObjectsByType<PrototypeProjectile>(), shot => shot.transform.position),
                 playerHealth = playerHealth != null ? playerHealth.Health : 0,
                 wave = waves != null ? waves.WaveNumber : 0,
+                room = waves != null ? waves.RoomIndex : 0,
+                exitUnlocked = waves != null && waves.ExitUnlocked,
+                doorOpening = waves != null ? waves.DoorOpening : 0,
+                encounterStarts = waves != null ? waves.EncounterStarts : 0,
                 victory = waves != null && waves.Victory,
                 victoryVisible = controls.VictoryVisible,
                 onBreak = waves != null && waves.OnBreak,
@@ -238,7 +242,9 @@ namespace DrForms.Prototype
             public float questionActiveSeconds;
             public Vector2[] answerCenters;
             public Vector3[] projectilePositions;
-            public int wave;
+            public int wave, room, encounterStarts;
+            public bool exitUnlocked;
+            public float doorOpening;
             public bool victory, victoryVisible, onBreak;
             public float breakRemaining, safePlayerDistance;
             public Vector3[] spawns;

@@ -12,17 +12,20 @@ Use an existing external Playwright installation (no Unity/package changes):
 ```powershell
 $env:DRFORMS_PLAYWRIGHT = 'C:\Users\21654\DrFormsGame-WebVerification\browser-tools\node_modules\playwright'
 $env:DRFORMS_FLOW_ARTIFACTS = 'C:\Users\21654\DrFormsGame-WebVerification'
+$env:DRFORMS_FLOW_BUILD_PATH = 'C:\Users\21654\DrFormsGame-WebVerification\DungeonRouteReleaseBuild'
 node Tests/Browser/reliable-flow.cjs
 ```
 
-The external root must contain `GamePrototypeBuild/index.html`. Results are
+Without a build-path override, the external root must contain
+`GamePrototypeBuild/index.html`. Results are
 written to `reliable-flow-browser-result.json`; `flow-*.png` screenshots capture
 questions and Victory. Failure exits nonzero and preserves session
 observations. The suite covers held pointer/key transitions, actual tab focus,
 selection versus submission, equal exactly-once rewards, frozen screens,
-unfinished-wave retry, multiple complete runs/New Run, emulated tablet and
+current-room retry, multiple complete runs/New Run, emulated tablet and
 portrait/landscape phone touch controls. Submit saves the answer, grants one
-reward, and automatically starts the next-wave break or final Victory. Repeated
+reward, and opens the current exit. Real mouse/touch movement crosses the passage
+to start the next room once; crossing the final exit triggers Victory. Repeated
 submission taps/keys must not duplicate progress, fire attacks, or restore an
 old movement destination. There is no reward Continue screen.
 Physical hardware and Safari are not
@@ -49,7 +52,7 @@ Answer/Retry/New Run controls.
 For the Garden Quest LAN preview (diagnostics off by default):
 
 ```powershell
-$env:DRFORMS_PREVIEW_ROOT = 'C:\Users\21654\DrFormsGame-WebVerification\GardenVisualReleaseBuild'
+$env:DRFORMS_PREVIEW_ROOT = 'C:\Users\21654\DrFormsGame-WebVerification\DungeonRouteReleaseBuild'
 node Tests/Browser/wifi-preview.cjs
 ```
 
@@ -58,23 +61,23 @@ regression suite. CSS safe-area insets pad the actual canvas; its rendering
 pixel ratio is capped at 1.5. Use `?devDiagnostics=1` only for developer
 troubleshooting. Both the panel and Unity reporter require that explicit URL;
 normal gameplay has no phone diagnostic overlay. The menu shows a small
-`GARDEN-QUEST-4` identifier. Physical notch behavior still requires a device.
+`DUNGEON-ROUTE-1` identifier. Physical notch behavior still requires a device.
 
 Controls: Play starts a run and activates procedural browser audio. Desktop
 mouse movement follows the garden floor; click casts at the nearest target.
 On touch devices use the left joystick and independent right Attack taps.
 Pause opens Resume and Restart / New Run; Restart resets answers/upgrades.
 Sound toggles persist in browser local storage (run progress remains in memory).
-Defeat Retry preserves earlier answers/upgrades and restarts only the unfinished
-wave. Victory New Run resets everything. Selecting an answer never submits it;
-Submit Answer grants one equal reward and resumes automatically. A lost-focus
+Defeat Retry preserves earlier answers/upgrades and restarts only the current
+room. Victory New Run resets everything. Selecting an answer never submits it;
+Submit Answer grants one equal reward and resumes gameplay with an animated exit. A lost-focus
 Safari recovery touch is consumed first; release, then use a fresh gesture.
 A short visible shield protects Play/Resume/question/focus recovery.
 
 Supplementary actual-browser UI/audio/layout checks:
 
 ```powershell
-$env:DRFORMS_FLOW_BUILD_PATH = 'C:\Users\21654\DrFormsGame-WebVerification\GardenVisualReleaseBuild'
+$env:DRFORMS_FLOW_BUILD_PATH = 'C:\Users\21654\DrFormsGame-WebVerification\DungeonRouteReleaseBuild'
 node Tests/Browser/polish-ui.cjs
 node Tests/Browser/audio-bridge.cjs
 ```
@@ -106,3 +109,10 @@ state is injected; fresh runs use the existing Pause / Restart UI. The full
 flow suite projects all four viewport corners onto the ground throughout each
 run to check that the camera never reveals the extended floor's edges. Its
 mouse projection uses the actual camera field of view from read-only snapshots.
+
+Dungeon route checks use `reliable-flow.cjs` and `polish-ui.cjs`. The flow suite
+covers actual locked-door collision, room entry, no advancement while waiting,
+exactly-once encounter starts, final-exit Victory, room Retry/New Run, input
+ownership, question guards, focus recovery and viewport ground coverage in
+portrait and landscape. The former `visual-presentation.cjs` arena boundary
+sweep targets the historical single arena and is not a dungeon-route check.

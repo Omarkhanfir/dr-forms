@@ -12,6 +12,7 @@ namespace DrForms.Prototype
         private CharacterController controller;
         private PrototypeTarget health;
         private PrototypeControls controls;
+        private int roomIndex;
         private float verticalSpeed,nextContact,nextCast,windupUntil;
         private Vector3 lockedAim;
         private LineRenderer warning;
@@ -35,6 +36,7 @@ namespace DrForms.Prototype
         public void ConfigureForWave(bool ranged)
         {
             health=GetComponent<PrototypeTarget>();
+            roomIndex = Mathf.RoundToInt(transform.position.z / 24);
             IsRanged=ranged;speed=ranged?1.1f:Mathf.Min(speed,1.8f);
             contactDamage=Mathf.Min(contactDamage,10);contactCooldown=Mathf.Max(contactCooldown,1.5f);
             nextCast=Time.time+3.5f;
@@ -48,6 +50,7 @@ namespace DrForms.Prototype
         private void Update()
         {
             if(player==null || player.IsDefeated || health.Health<=0 || controls==null || !controls.CanPlay){if(warning!=null && health.Health<=0)warning.enabled=false;return;}
+            if (player.transform.position.z < roomIndex * 24 - 10 || player.transform.position.z > roomIndex * 24 + 10) return;
             var delta=player.transform.position-transform.position;delta.y=0;float distance=delta.magnitude;
             Vector3 horizontal=Vector3.zero;
             float stop=IsRanged?4.8f:contactDistance*.9f;

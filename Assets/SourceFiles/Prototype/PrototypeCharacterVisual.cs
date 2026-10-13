@@ -169,7 +169,7 @@ namespace DrForms.Prototype
             for (int z = -40; z < 40; z++) for (int x = -40; x < 40; x++) {
                 int first = vertices.Count;
                 float shade = ((x * 17 + z * 31) & 3) * .009f;
-                bool path = Mathf.Abs(x * 2 + 1) > 11 && Mathf.Abs(x * 2 + 1) < 15 || Mathf.Abs(z * 2 + 1) > 11 && Mathf.Abs(z * 2 + 1) < 15;
+                bool path = Mathf.Abs(x * 2 + 1) < 2 && z * 2 + 1 > -8 && z * 2 + 1 < 63;
                 Color color = path ? new Color(.48f + shade, .46f + shade, .28f + shade) : new Color(.28f + shade, .48f + shade, .12f + shade);
                 vertices.Add(new Vector3(x*2,.006f,z*2)); vertices.Add(new Vector3(x*2,.006f,z*2+2));
                 vertices.Add(new Vector3(x*2+2,.006f,z*2+2)); vertices.Add(new Vector3(x*2+2,.006f,z*2));
@@ -186,23 +186,7 @@ namespace DrForms.Prototype
             RenderSettings.ambientLight = new Color(.64f,.69f,.60f);
             var light = GameObject.Find("Arena Light").GetComponent<Light>(); light.intensity=1.05f; light.transform.rotation=Quaternion.Euler(65,-35,0);
             light.shadows=LightShadows.None; // Soft mesh contacts avoid shadow-map bandwidth and jagged wall shadows.
-            for(int side=0;side<4;side++) for(int n=-5;n<=5;n++) {
-                Vector3 pos=side<2?new Vector3(n*2,.25f,side==0?10.65f:-10.65f):new Vector3(side==2?10.65f:-10.65f,.25f,n*2);
-                var stone=PrototypeCharacterVisual.Part(decorations.transform,"Rounded Boundary Stone",PrimitiveType.Cube,pos,side<2?new Vector3(1.9f,.5f,.8f):new Vector3(.8f,.5f,1.9f),10);
-                PrototypePresentation.Contact(stone, new Vector3(0,-.23f,0),2.1f);
-            }
-            // Vegetation stays outside every combat route and has no colliders.
-            for(int side=0;side<4;side++) for(int n=-4;n<=4;n++) {
-                Vector3 pos=side<2?new Vector3(n*4,0,side==0?16:-16):new Vector3(side==2?16:-16,0,n*4);
-                var tree=new GameObject("Garden Cypress").transform;tree.SetParent(decorations.transform);tree.position=pos;
-                PrototypeCharacterVisual.Part(tree,"Trunk",PrimitiveType.Cylinder,new Vector3(0,.8f,0),new Vector3(.28f,.8f,.28f),3);
-                for(int tier=0;tier<3;tier++) PrototypeCharacterVisual.Part(tree,"Leaf Canopy",PrimitiveType.Sphere,new Vector3(0,1.4f+tier*.6f,0),new Vector3(2-tier*.45f,1.5f,2-tier*.45f),tier%2==0?0:5);
-                PrototypePresentation.Contact(tree,new Vector3(0,.014f,0),2.6f);
-                for(int i=0;i<3;i++) {
-                    var bush=PrototypeCharacterVisual.Part(decorations.transform,"Border Fern",PrimitiveType.Sphere,pos+new Vector3(1.7f+i*.35f,.22f,.8f),new Vector3(.5f,.45f,.7f),5);
-                    bush.localRotation=Quaternion.Euler(0,i*45,20);
-                }
-            }
+
         }
         private void OnDestroy(){if(decorations!=null)Destroy(decorations);if(groundMesh!=null)Destroy(groundMesh);if(groundMaterial!=null)Destroy(groundMaterial);}
     }
