@@ -12,13 +12,17 @@ namespace DrForms.Prototype
         public bool IsDefeated => Health <= 0;
         public int DamageApplications { get; private set; }
         private bool restarting;
+        private float graceUntil;
+        public bool GraceActive => Time.time < graceUntil;
+        public void GrantGrace() => graceUntil = Time.time + 1.5f;
         private void Awake() => Health = maximumHealth;
 
         public void TakeDamage(int damage)
         {
-            if (IsDefeated || damage <= 0) return;
+            if (IsDefeated || damage <= 0 || GraceActive) return;
             DamageApplications++;
             Health = Mathf.Max(0, Health - damage);
+            PrototypeAudio.Play(1);
             if (!IsDefeated) return;
             Time.timeScale = 0;
             GetComponent<PrototypeControls>().SetGameplayEnabled(false);
@@ -26,12 +30,21 @@ namespace DrForms.Prototype
             foreach (var projectile in FindObjectsByType<PrototypeProjectile>()) projectile.Cancel();
         }
 
+        public void RestartNewRun()
+        {
+            if (restarting) return;
+            PrototypeQuestions.NewAssessment(); Reload();
+        }
         public void Restart()
         {
             var waves = GetComponent<PrototypeWaves>();
             if ((!IsDefeated && (waves == null || !waves.Victory)) || restarting) return;
-            restarting = true;
             if (waves != null && waves.Victory) PrototypeQuestions.NewAssessment();
+            Reload();
+        }
+        private void Reload()
+        {
+            restarting = true;
             PrototypeControls.PrepareRestart();
             Time.timeScale = 1;
             // Reload restores destroyed enemies/targets as well as every transient effect and input owner.

@@ -43,6 +43,7 @@ namespace DrForms.Prototype
             PreviousShotTime = LastShotTime;
             LastShotTime = Time.time;
             ShotsFired++;
+            PrototypeAudio.Play(0);
             ActiveProjectiles++;
             var shot = GameObject.CreatePrimitive(PrimitiveType.Cube);
             shot.name = "Prototype Projectile";

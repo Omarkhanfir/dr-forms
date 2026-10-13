@@ -49,6 +49,7 @@ namespace DrForms.Prototype
             if (WaveNumber == WaveCount)
             {
                 Victory = true;
+                PrototypeAudio.Play(3);
                 Time.timeScale = 0;
                 controls.SetGameplayEnabled(false);
                 foreach (var projectile in FindObjectsByType<PrototypeProjectile>()) projectile.Cancel();

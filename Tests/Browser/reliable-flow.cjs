@@ -54,7 +54,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
       page.on('response', res => { if (res.status() >= 400) target.events.push({ type: 'http-error', url: res.url(), status: res.status() }); });
       await page.goto(`http://127.0.0.1:${port}`, { waitUntil: 'domcontentloaded' });
       await page.waitForFunction(() => !!window.prototypeInstance, null, { timeout: 180000 });
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(5500);
       const snapshot = async () => {
         const before = target.states.length;
         await page.evaluate(() => window.prototypeInstance.SendMessage('Prototype Player', 'LogVerificationState'));
@@ -79,6 +79,15 @@ function passed(name, details) { result.checks.push({ name, details }); console.
         passed('Safari startup with DOM focus false reproduces the exact paused/input-wait state before any interaction');
         const p=await client(s,s.attackCenter);await page.touchscreen.tap(p.x,p.y);
       }
+      // Fresh Play is deliberate; a Safari focus-recovery gesture is consumed first.
+      await page.waitForTimeout(250); s = await snapshot();
+      assert(!s.started && s.timeScale === 0 && s.wave === 0 && s.shotsFired === 0);
+      await page.screenshot({path:path.join(artifacts, `polish-${touch ? phone ? 'phone' : 'tablet' : 'desktop'}-start.png`)});
+      const play = await client(s, s.playCenter);
+      if (touch) await page.touchscreen.tap(play.x, play.y); else await page.mouse.click(play.x, play.y);
+      await page.waitForTimeout(300); s = await snapshot();
+      assert(s.started && s.shotsFired === 0 && !s.manualPaused);
+      passed('Fresh Play starts combat and consumes its gesture without attacking');
       const playableDeadline = Date.now() + 20000;
       while (s.time <= 0 && Date.now() < playableDeadline) {
         await page.waitForTimeout(500);
@@ -92,6 +101,16 @@ function passed(name, details) { result.checks.push({ name, details }); console.
         await page.evaluate(()=>{delete document.hasFocus;});
         passed('Trusted visible startup touch restores the saved clock while DOM focus stays false and fires no attack');
       }
+      // Exercise menu ownership and persistent sound with genuine clicks/taps.
+      const act = async point => { const p = await client(s, point); if(touch) await page.touchscreen.tap(p.x,p.y); else await page.mouse.click(p.x,p.y); await page.waitForTimeout(150); s=await snapshot(); };
+      await act(s.pauseCenter); assert(s.manualPaused && s.timeScale===0 && !s.canPlay);
+      const pausedTime=s.time, shots=s.shotsFired;
+      await page.waitForTimeout(300); s=await snapshot(); assert(s.time===pausedTime);
+      // Sound stays outside the paused menu; test it after resume.
+      await act(s.resumeCenter); assert(!s.manualPaused && s.timeScale===1 && s.shotsFired===shots && s.grace);
+      const muted=s.muted; await act(s.muteCenter); assert(s.muted!==muted);
+      await page.waitForTimeout(600); await act(s.muteCenter); assert(s.muted===muted);
+      passed('Manual Pause freezes its own clock; Resume consumes input and adds grace; mute toggles');
       target.initial = s;
       return { page, context, snapshot, client, target };
     }

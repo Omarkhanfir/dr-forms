@@ -52,7 +52,7 @@ canvas touches reached Unity while DOM/browser focus remained false and paused
 the clock. A trusted touch on the visible game now restores bridge focus and
 is consumed until release; subsequent fresh input can play. Question, ending,
 and background pauses remain protected. The diagnostic `SAFARI-FOCUS-2` player
-is available for the user's physical-phone retest; see the latest handoff.
+was confirmed by the user on a physical iPhone 12: movement and attacks work. Preserve this recovery bridge; see the latest handoff.
 
 For timed tests, the timer counts only time spent answering questions. Gameplay and other time outside answering do not consume the test's answering-time allowance.
 

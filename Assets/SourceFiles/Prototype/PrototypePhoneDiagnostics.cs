@@ -18,6 +18,7 @@ namespace DrForms.Prototype
         private static void Install()
         {
 #if UNITY_WEBGL && DEVELOPMENT_BUILD && !UNITY_EDITOR
+            if (!Application.absoluteURL.Contains("devDiagnostics=1")) return;
             var host = new GameObject("Temporary Phone Diagnostics");
             DontDestroyOnLoad(host);
             host.AddComponent<PrototypePhoneDiagnostics>();
@@ -85,7 +86,7 @@ namespace DrForms.Prototype
                 : !controls.GameplayEnabled ? "blocked" : waves != null && waves.OnBreak ? "wave break" : "combat";
             var snapshot = new Snapshot
             {
-                build = "SAFARI-FOCUS-2", frame = Time.frameCount, realtime = Time.realtimeSinceStartup, gameTime = Time.time, timeScale = Time.timeScale,
+                build = PrototypeControls.BuildId, frame = Time.frameCount, realtime = Time.realtimeSinceStartup, gameTime = Time.time, timeScale = Time.timeScale,
                 state = state, applicationFocus = Application.isFocused, bridgeFocus = PrototypeBrowserInput.Focused,
                 focus = controls != null && controls.HasFocus, epoch = PrototypeBrowserInput.Epoch,
                 canPlay = controls != null && controls.CanPlay, gameplayEnabled = controls != null && controls.GameplayEnabled,

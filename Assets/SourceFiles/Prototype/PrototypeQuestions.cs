@@ -66,7 +66,7 @@ namespace DrForms.Prototype
             waves = GetComponent<PrototypeWaves>();
             combat.AddDamage(earnedDamage);
             var root = controls.UIRoot;
-            var status = PrototypeControls.Rect("Question Progress", root, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -175), new Vector2(360, 30));
+            var status = PrototypeControls.Rect("Question Progress", root, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -123), new Vector2(360, 30));
             progress = PrototypeControls.Label("Question Progress Text", status, "", 20);
             panel = PrototypeControls.Rect("Question Screen", root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             panel.gameObject.AddComponent<Image>().color = new Color(0.02f, 0.04f, 0.08f, 1);
@@ -219,6 +219,7 @@ namespace DrForms.Prototype
                 + (showCorrectnessFeedback ? (isCorrect ? " (Correct)" : " (Incorrect)") : "");
             Guard(); panel.gameObject.SetActive(false);
             controls.Suspend(); Time.timeScale = previousTimeScale;
+            PrototypeAudio.Play(2);
             waves.CompleteAnsweredWave();
         }
         private void OnDestroy() { if (Paused) Time.timeScale = previousTimeScale; }
