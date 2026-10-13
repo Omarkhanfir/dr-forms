@@ -18,7 +18,7 @@ const server = http.createServer((req, res) => {
   if (file.endsWith('.gz')) res.setHeader('Content-Encoding', 'gzip');
   if (file.endsWith('.br')) res.setHeader('Content-Encoding', 'br');
   if (file.endsWith('index.html')) {
-    const html = fs.readFileSync(file, 'utf8').replace('.then((unityInstance) => {', '.then((unityInstance) => { window.prototypeInstance = unityInstance;');
+    const html = require('./player-shell.cjs').playerShell(fs.readFileSync(file, 'utf8')).replace('.then((unityInstance) => {', '.then((unityInstance) => { window.prototypeInstance = unityInstance;');
     res.setHeader('Content-Length', Buffer.byteLength(html)); return res.end(html);
   }
   res.setHeader('Content-Length', fs.statSync(file).size); fs.createReadStream(file).pipe(res);

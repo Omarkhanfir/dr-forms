@@ -21,6 +21,7 @@ namespace DrForms.Prototype
         private void Awake()
         {
             Health = maximumHealth;
+            gameObject.AddComponent<PrototypeCharacterVisual>();
             body = GetComponent<Renderer>();
             normalColor = body.sharedMaterial.GetColor("_BaseColor");
             visual = new MaterialPropertyBlock();
@@ -75,8 +76,9 @@ namespace DrForms.Prototype
             {
                 PrototypeCombatEffect.Spawn(transform.position, body.sharedMaterial,
                     new Color(1, 0.7f, 0.2f), 1.4f, 0.3f, "Target Defeat");
-                gameObject.SetActive(false);
-                Destroy(gameObject);
+                healthDisplay.gameObject.SetActive(false);
+                var controller = GetComponent<CharacterController>(); if (controller != null) controller.enabled = false;
+                // The visual owns a short unscaled defeat animation, including question pauses.
             }
         }
         private void RefreshHealth()

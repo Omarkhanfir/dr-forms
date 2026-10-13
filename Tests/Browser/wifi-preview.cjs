@@ -30,8 +30,7 @@ const server = http.createServer((req, res) => {
     let html = fs.readFileSync(file, 'utf8');
     if (new URL(req.url, 'http://localhost').searchParams.get('devDiagnostics') === '1')
       html = html.replace('<head>', '<head><script src="/phone-diagnostics.js?v=PHONE-DIAG-2"></script>');
-    html = html.replace(/<meta name="viewport"[^>]*>/, '<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">');
-    html = html.replace('</head>', '<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#102e32}#unity-container{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;transform:none!important}#unity-canvas{width:100%!important;height:100%!important;display:block}#unity-footer{display:none}</style></head>');
+    html = require('./player-shell.cjs').playerShell(html);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Content-Length', Buffer.byteLength(html));
     return res.end(req.method === 'HEAD' ? undefined : html);

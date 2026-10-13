@@ -1,0 +1,10 @@
+<linker>
+  <!-- CreatePrimitive temporarily constructs these native colliders before we
+       disable/remove them. Keep their types in Web players even though the
+       procedural visual models never use them for gameplay collision. -->
+  <assembly fullname="UnityEngine.PhysicsModule">
+    <type fullname="UnityEngine.CapsuleCollider" preserve="all" />
+    <type fullname="UnityEngine.SphereCollider" preserve="all" />
+    <type fullname="UnityEngine.BoxCollider" preserve="all" />
+  </assembly>
+</linker>

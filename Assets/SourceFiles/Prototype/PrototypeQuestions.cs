@@ -152,6 +152,7 @@ namespace DrForms.Prototype
         private void Update()
         {
             if (controls == null) return;
+            progress.gameObject.SetActive(controls.Started && !controls.ManualPaused);
             progress.text = "Questions " + AnswerCount + " / " + content.Length + rewardFeedback;
             if (!Paused) return;
             if (!controls.HasFocus || epoch != PrototypeBrowserInput.Epoch) { Guard(); return; }

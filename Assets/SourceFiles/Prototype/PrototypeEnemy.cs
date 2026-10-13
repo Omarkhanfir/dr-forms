@@ -14,6 +14,7 @@ namespace DrForms.Prototype
         private PrototypeTarget health;
         private PrototypeControls controls;
         private float verticalSpeed, nextContact;
+        public bool IsRanged { get; private set; }
         public int ContactHits { get; private set; }
         public float LastContactTime { get; private set; }
         public float PreviousContactTime { get; private set; }
