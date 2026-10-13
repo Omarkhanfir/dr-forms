@@ -131,11 +131,9 @@ namespace DrForms.Prototype
             var questions = GetComponent<PrototypeQuestions>();
             Debug.Log("PROTOTYPE_STATE:" + JsonUtility.ToJson(new VerificationState
             {
-                rewardVisible = questions != null && questions.RewardVisible,
                 selectedAnswer = questions != null ? questions.Selected : -1,
                 questionInputReady = questions != null && questions.InputReady,
                 submitCenter = questions != null ? questions.SubmitCenter : Vector2.zero,
-                continueCenter = questions != null ? questions.ContinueCenter : Vector2.zero,
                 questionPaused = questions != null && questions.Paused,
                 answers = questions != null ? questions.Answers : new int[0],
                 questionActiveSeconds = questions != null ? questions.ActiveSeconds : 0,
@@ -209,9 +207,9 @@ namespace DrForms.Prototype
         [System.Serializable]
         private struct VerificationState
         {
-            public bool rewardVisible, questionInputReady;
+            public bool questionInputReady;
             public int selectedAnswer;
-            public Vector2 submitCenter, continueCenter;
+            public Vector2 submitCenter;
             public bool questionPaused;
             public int[] answers;
             public float questionActiveSeconds;

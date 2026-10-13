@@ -41,7 +41,7 @@ namespace DrForms.Prototype
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         public static void NewRun() => completedWaves = 0;
 
-        public void ContinueAfterReward()
+        public void CompleteAnsweredWave()
         {
             if (!awaitingQuestion || questions.AnswerCount != WaveNumber || player.IsDefeated) return;
             awaitingQuestion = false;

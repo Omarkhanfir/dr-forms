@@ -9,10 +9,13 @@ Dr.forms is a SaaS platform for creating and completing forms, quizzes, homework
 
 Creators configure question intervals and the rules governing upgrades in the game experience.
 
-The current local prototype uses this pacing: Wave 1 → Question 1 → Reward →
-Wave 2 → Question 2 → Reward → Wave 3 → Question 3 → Reward → Victory.
-Each cleared wave waits for its answer and a separate reward Continue; no timed
-mid-combat question trigger runs. This is a prototype pacing choice, not a
+The current local prototype uses this pacing: Wave 1 → Question 1 → Submit →
+Wave 2 → Question 2 → Submit → Wave 3 → Question 3 → Submit → Victory.
+Each cleared wave waits for its answer; Submit saves it, grants its reward once,
+and automatically resumes the next wave after the existing three-second break,
+or shows Victory after the final answer. No Continue button or reward screen
+is required. No timed mid-combat question trigger runs. This is a prototype
+pacing choice, not a
 restriction on future creator-configured intervals. The prototype validates
 exactly three waves and three questions, each with three options. Question
 content, wave enemy counts, and reward settings remain independent.
@@ -22,7 +25,9 @@ a configurable input guard (default 0.5 seconds), a fresh option selection, and
 a separate Submit Answer gesture. The guard prevents accidental input; it does
 not establish that a participant read the question. Selection can change before
 submission. Each answer grants one equal damage upgrade by default, with
-correctness feedback off. A reward summary requires its own Continue gesture.
+correctness feedback off. The progress HUD shows the damage reward after Submit.
+Resuming clears input and requires neutral pointers and fresh desktop movement,
+so the submission gesture cannot fire an attack or restore an old destination.
 Victory requires all three cleared waves and submitted answers.
 
 Defeat Retry restores health and restarts only the unfinished wave, preserving
@@ -31,15 +36,16 @@ stats. Progress exists only in memory; browser refresh/close or application
 restart does not preserve it. No backend, persistence, hosting, or pricing
 decision is implied.
 
-Prototype verification (2026-10-12): the Web development build succeeded, and
-45 actual Chrome mouse/keyboard/emulated-touch browser checks passed across
-four complete runs and two defeat/retry cycles. Question/reward/Victory
+Prototype verification (2026-10-13): the Web development build succeeded, and
+44 actual Chrome mouse/keyboard/emulated-touch browser checks passed across
+four complete runs and two defeat/retry cycles. Question/Victory
 screenshots, build logs and results are outside Git; see [HANDOFF.md](HANDOFF.md)
 and [browser regression instructions](../Tests/Browser/README.md). Physical
 devices, Safari, release/native players, Editor runtime, arbitrary long-content
 fixtures and alternative Inspector configurations remain unverified. Next
 manual check: rapidly attack through a final kill, release, change a selection,
-and verify that only Submit Answer records it and Continue advances the wave.
+and verify that only Submit Answer records it, awards once, and resumes without
+firing an attack.
 
 For timed tests, the timer counts only time spent answering questions. Gameplay and other time outside answering do not consume the test's answering-time allowance.
 

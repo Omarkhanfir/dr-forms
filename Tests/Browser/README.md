@@ -17,9 +17,13 @@ node Tests/Browser/reliable-flow.cjs
 
 The external root must contain `GamePrototypeBuild/index.html`. Results are
 written to `reliable-flow-browser-result.json`; `flow-*.png` screenshots capture
-questions, rewards and Victory. Failure exits nonzero and preserves session
+questions and Victory. Failure exits nonzero and preserves session
 observations. The suite covers held pointer/key transitions, actual tab focus,
 selection versus submission, equal exactly-once rewards, frozen screens,
 unfinished-wave retry, multiple complete runs/New Run, emulated tablet and
-portrait/landscape phone touch controls. Physical hardware and Safari are not
+portrait/landscape phone touch controls. Submit saves the answer, grants one
+reward, and automatically starts the next-wave break or final Victory. Repeated
+submission taps/keys must not duplicate progress, fire attacks, or restore an
+old movement destination. There is no reward Continue screen.
+Physical hardware and Safari are not
 covered. Chrome and Playwright paths can be adjusted for another workstation.

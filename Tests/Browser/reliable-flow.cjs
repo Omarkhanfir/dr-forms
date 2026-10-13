@@ -116,7 +116,8 @@ function passed(name, details) { result.checks.push({ name, details }); console.
     const click=async(t,s,point,count=1)=>{
       const p=await t.client(s,point);
       if(t.target.touch) await t.page.touchscreen.tap(p.x,p.y);
-      else await t.page.mouse.click(p.x,p.y,{clickCount:count});
+      else if(count===2) await t.page.mouse.dblclick(p.x,p.y,{delay:35});
+      else await t.page.mouse.click(p.x,p.y);
       await t.page.waitForTimeout(90);
       return t.snapshot();
     };
@@ -166,7 +167,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
           await t.page.mouse.up();await t.page.keyboard.up('Enter');held=false;holdOnFinal=true;
         }
       }
-      assert(!s.defeated,'Defeated while clearing wave');assert(s.questionPaused && !s.rewardVisible,'No question after clear');
+      assert(!s.defeated,'Defeated while clearing wave');assert(s.questionPaused,'No question after clear');
       assert(s.answers.length===s.wave-1 && !s.victory && !s.onBreak);
       if(t.target.touch){ // joystick touch survives into UI until explicitly released
         await t.page.waitForTimeout(650);s=await t.snapshot();assert(!s.questionInputReady && s.selectedAnswer===-1);
@@ -195,29 +196,37 @@ function passed(name, details) { result.checks.push({ name, details }); console.
       const n=s.answers.length,damage=s.damage;
       s=await freeze(t,s);assert(!s.victory && s.answers.length===n);
       // Submit while unselected must do nothing.
-      if(s.selectedAnswer<0){s=await click(t,s,s.submitCenter);assert(s.answers.length===n && !s.rewardVisible);}
-      s=await option(t,s,0);s=await click(t,s,s.answerCenters[0]);assert(s.selectedAnswer===0 && s.answers.length===n && s.damage===damage && !s.rewardVisible);
+      if(s.selectedAnswer<0){s=await click(t,s,s.submitCenter);assert(s.answers.length===n && s.questionPaused);}
+      s=await option(t,s,0);s=await click(t,s,s.answerCenters[0]);assert(s.selectedAnswer===0 && s.answers.length===n && s.damage===damage && s.questionPaused);
       s=await option(t,s,1);s=await click(t,s,s.answerCenters[1]);assert(s.selectedAnswer===1 && s.answers.length===n);
       await t.page.screenshot({path:path.join(artifacts,`flow-${t.target.touch?(t.target.phone?'phone':'tablet'):'desktop'}-question-${s.wave}.png`)});
       passed('Selection can change without submitting or granting rewards', {wave:s.wave,touch:t.target.touch});
+      const submitPoint=s.submitCenter,shots=s.shotsFired,hits=s.hitsApplied,position=s.position,chosen=s.selectedAnswer;
       if(keyboard){
         await t.page.keyboard.press('ArrowDown',{delay:80});await t.page.waitForTimeout(550);
         await t.page.keyboard.press('ArrowDown',{delay:80});await t.page.waitForTimeout(550);
         await t.page.keyboard.press('Enter',{delay:80});await t.page.waitForTimeout(100);s=await t.snapshot();
-        assert(s.rewardVisible,'Keyboard focus/navigation failed to submit');
-      }else s=await click(t,s,s.submitCenter);
-      assert(s.rewardVisible && s.answers.length===n+1 && s.damage===damage+10 && !s.victory);
-      // Repeat gesture / keyboard submit spam cannot duplicate or continue.
-      s=await click(t,s,s.submitCenter,2);await t.page.keyboard.press('Enter');s=await t.snapshot();
-      assert(s.rewardVisible && s.answers.length===n+1 && s.damage===damage+10 && !s.victory);
-      s=await freeze(t,s);
-      await t.page.screenshot({path:path.join(artifacts,`flow-${t.target.touch?(t.target.phone?'phone':'tablet'):'desktop'}-reward-${s.wave}.png`)});
-      passed('Submission grants one equal reward; reward screen freezes and requires separate Continue', {wave:s.wave,touch:t.target.touch});
-      s=await poll(t,x=>x.questionInputReady);
-      s=await click(t,s,s.continueCenter);
+        assert(!s.questionPaused && s.answers.length===n+1,'Keyboard focus/navigation failed to submit');
+      }else s=await click(t,s,s.submitCenter,t.target.touch?1:2);
+      assert(!s.questionPaused && s.answers.length===n+1 && s.damage===damage+10);
+      assert(s.answers[n]===chosen,'Submit saved a different answer from the selected option');
+      assert(s.shotsFired===shots && s.hitsApplied===hits && dist(s.position,position)<.001 && !s.hasDestination,
+        'Submission leaked into gameplay input');
+      assert(n===2?s.victory:s.onBreak,'Submit did not automatically complete the wave');
+      // Repeat taps at the removed Submit screen and keyboard spam cannot
+      // duplicate answers/rewards, fire attacks, or restore an old destination.
+      // Keyboard submission leaves the mouse over an option. Moving it to the
+      // former Submit location would be fresh gameplay movement, not a stale gesture.
+      if(!keyboard) s=await click(t,s,submitPoint,2);
+      await t.page.keyboard.press('Enter');await t.page.keyboard.press('Enter');s=await t.snapshot();
+      assert(!s.questionPaused && s.answers.length===n+1 && s.damage===damage+10);
+      assert(s.shotsFired===shots && s.hitsApplied===hits && dist(s.position,position)<.001 && !s.hasDestination);
+      await t.page.waitForTimeout(650);s=await t.snapshot();
+      assert(s.shotsFired===shots && dist(s.position,position)<.001 && !s.hasDestination);
+      passed('Submit grants exactly one reward and resumes automatically without attack or stale movement', {wave:s.wave,touch:t.target.touch});
       if(n===2){s=await poll(t,x=>x.victory && x.victoryVisible);assert(s.answers.length===3 && s.wave===3 && s.enemyCount===0);
         await t.page.screenshot({path:path.join(artifacts,`flow-${t.target.touch?(t.target.phone?'phone':'tablet'):'desktop'}-victory.png`)});
-        passed('Victory requires all waves, final submission and reward Continue');
+        passed('Final Submit shows Victory with all three answers and rewards');
       }else {
         if(!t.target.touch&&!combatFocusChecked){
           const cdp=await t.context.newCDPSession(t.page);await cdp.send('Emulation.setFocusEmulationEnabled',{enabled:false});
@@ -269,7 +278,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
       s=await clearWave(t);
       if(phone){await t.page.setViewportSize({width:844,height:390});await t.page.waitForTimeout(500);s=await t.snapshot();}
       s=await answer(t,s);s=await clearWave(t);s=await answer(t,s);
-      passed('Complete emulated touch run and responsive question/reward controls', {phone});
+      passed('Complete emulated touch run and responsive guarded Submit controls', {phone});
       await t.context.close();
     }
     for(const target of result.sessions)assert(!target.events.some(e=>['error','pageerror','requestfailed','http-error'].includes(e.type)),JSON.stringify(target.events));

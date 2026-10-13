@@ -27,7 +27,7 @@ namespace DrForms.Prototype
         [SerializeField] private bool equalRewards = true;
         [SerializeField, Min(0)] private int incorrectDamageUpgrade = 5;
         [SerializeField] private bool showCorrectnessFeedback;
-        private enum ScreenState { Closed, Question, Reward }
+        private enum ScreenState { Closed, Question }
         private ScreenState state;
         private static readonly List<int> answers = new List<int>();
         private static int earnedDamage;
@@ -36,7 +36,8 @@ namespace DrForms.Prototype
         private PrototypeWaves waves;
         private RectTransform panel, contentRect;
         private Text progress, prompt;
-        private PrototypeDeliberateButton submit, next;
+        private PrototypeDeliberateButton submit;
+        private string rewardFeedback = "";
         private readonly List<PrototypeDeliberateButton> options = new List<PrototypeDeliberateButton>();
         private readonly List<Text> labels = new List<Text>();
         private float previousTimeScale, neutralAt = -1;
@@ -44,7 +45,6 @@ namespace DrForms.Prototype
         private bool ready;
         private int selected = -1;
         public bool Paused => state != ScreenState.Closed;
-        public bool RewardVisible => state == ScreenState.Reward;
         public int Selected => selected;
         public bool InputReady => ready && controls.HasFocus && epoch == PrototypeBrowserInput.Epoch;
         public int Generation => generation;
@@ -53,7 +53,6 @@ namespace DrForms.Prototype
         public float ActiveSeconds => 0; // Retained read-only snapshot compatibility; no timed trigger.
         public Vector2[] OptionCenters => options.ConvertAll(option => Center(option.transform)).ToArray();
         public Vector2 SubmitCenter => submit != null ? Center(submit.transform) : Vector2.zero;
-        public Vector2 ContinueCenter => next != null ? Center(next.transform) : Vector2.zero;
         private static Vector2 Center(Transform rect) => RectTransformUtility.WorldToScreenPoint(null, rect.position);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -69,7 +68,7 @@ namespace DrForms.Prototype
             var root = controls.UIRoot;
             var status = PrototypeControls.Rect("Question Progress", root, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -175), new Vector2(360, 30));
             progress = PrototypeControls.Label("Question Progress Text", status, "", 20);
-            panel = PrototypeControls.Rect("Question and Reward Screen", root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            panel = PrototypeControls.Rect("Question Screen", root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             panel.gameObject.AddComponent<Image>().color = new Color(0.02f, 0.04f, 0.08f, 1);
             var viewport = PrototypeControls.Rect("Question Viewport", panel, new Vector2(0.05f, 0.24f), new Vector2(0.95f, 0.95f), Vector2.zero, Vector2.zero);
             viewport.gameObject.AddComponent<Image>().color = new Color(0.02f, 0.04f, 0.08f, 1);
@@ -104,8 +103,6 @@ namespace DrForms.Prototype
             PrototypeControls.Label("Help", hint, "Scroll for more. Choose an option, then Submit Answer.", 14);
             submit = MakeButton("Submit Answer", footer, Submit);
             PrototypeControls.Label("Submit Text", (RectTransform)submit.transform, "Submit Answer", 24);
-            next = MakeButton("Continue", footer, Continue);
-            PrototypeControls.Label("Continue Text", (RectTransform)next.transform, "Continue", 24);
             panel.gameObject.SetActive(false);
             if (content == null || content.Length != 3 || waves == null || waves.WaveCount != content.Length
                 || System.Array.Exists(content, q => q == null || string.IsNullOrWhiteSpace(q.prompt) || q.options == null
@@ -116,7 +113,7 @@ namespace DrForms.Prototype
                 controls.SetGameplayEnabled(false);
                 prompt.text = "Invalid prototype configuration: require three waves and three questions with three options each.";
                 foreach (var option in options) option.gameObject.SetActive(false);
-                submit.gameObject.SetActive(false); next.gameObject.SetActive(false); panel.gameObject.SetActive(true);
+                submit.gameObject.SetActive(false); panel.gameObject.SetActive(true);
                 enabled = false;
             }
         }
@@ -155,7 +152,7 @@ namespace DrForms.Prototype
         private void Update()
         {
             if (controls == null) return;
-            progress.text = "Questions " + AnswerCount + " / " + content.Length;
+            progress.text = "Questions " + AnswerCount + " / " + content.Length + rewardFeedback;
             if (!Paused) return;
             if (!controls.HasFocus || epoch != PrototypeBrowserInput.Epoch) { Guard(); return; }
             if (ready) return;
@@ -163,7 +160,7 @@ namespace DrForms.Prototype
             if (neutralAt < 0) neutralAt = Time.unscaledTime;
             if (Time.unscaledTime - neutralAt < inputGuardSeconds) return;
             ready = true;
-            EventSystem.current?.SetSelectedGameObject((RewardVisible ? next : options[0]).gameObject);
+            EventSystem.current?.SetSelectedGameObject(options[0].gameObject);
         }
 
         private static bool SubmitKeyHeld() => Keyboard.current != null &&
@@ -172,13 +169,13 @@ namespace DrForms.Prototype
         public void OpenForWave(int wave)
         {
             if (Paused || wave != AnswerCount + 1 || wave > content.Length || GetComponent<PrototypePlayerHealth>().IsDefeated) return;
-            state = ScreenState.Question; selected = -1;
+            state = ScreenState.Question; selected = -1; rewardFeedback = "";
             previousTimeScale = Time.timeScale; Time.timeScale = 0;
             controls.SetGameplayEnabled(false); Guard();
             prompt.text = "Question " + wave + " / " + content.Length + "\n" + content[AnswerCount].prompt;
             foreach (var option in options) { option.gameObject.SetActive(true); option.GetComponent<Image>().color = new Color(0.1f, 0.45f, 0.4f); }
             for (var i = 0; i < options.Count; i++) labels[i].text = content[AnswerCount].options[i];
-            submit.gameObject.SetActive(true); submit.interactable = false; next.gameObject.SetActive(false);
+            submit.gameObject.SetActive(true); submit.interactable = false;
             contentRect.anchoredPosition = Vector2.zero;
             panel.gameObject.SetActive(true);
             ResizeText();
@@ -216,21 +213,13 @@ namespace DrForms.Prototype
             if (state != ScreenState.Question || !InputReady || selected < 0 || AnswerCount != waves.WaveNumber - 1) return;
             var isCorrect = selected == content[AnswerCount].correct;
             var reward = Mathf.Max(0, equalRewards || isCorrect ? damageUpgrade : incorrectDamageUpgrade);
-            state = ScreenState.Reward; // Close the transaction gate before applying anything.
+            state = ScreenState.Closed; // Close the transaction gate before applying anything.
             answers.Add(selected); earnedDamage += reward; combat.AddDamage(reward);
-            prompt.text = "Answer " + AnswerCount + " / " + content.Length + " recorded\n\nDamage +" + reward + "\nCurrent damage: " + combat.Damage
-                + (showCorrectnessFeedback ? (isCorrect ? "\nCorrect" : "\nIncorrect") : "");
-            foreach (var option in options) option.gameObject.SetActive(false);
-            submit.gameObject.SetActive(false); next.gameObject.SetActive(true);
-            contentRect.anchoredPosition = Vector2.zero; Guard();
-        }
-
-        private void Continue()
-        {
-            if (!RewardVisible || !InputReady) return;
-            state = ScreenState.Closed; Guard(); panel.gameObject.SetActive(false);
+            rewardFeedback = " | Damage +" + reward
+                + (showCorrectnessFeedback ? (isCorrect ? " (Correct)" : " (Incorrect)") : "");
+            Guard(); panel.gameObject.SetActive(false);
             controls.Suspend(); Time.timeScale = previousTimeScale;
-            waves.ContinueAfterReward();
+            waves.CompleteAnsweredWave();
         }
         private void OnDestroy() { if (Paused) Time.timeScale = previousTimeScale; }
     }
