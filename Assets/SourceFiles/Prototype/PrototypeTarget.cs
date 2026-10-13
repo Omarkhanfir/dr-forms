@@ -32,7 +32,7 @@ namespace DrForms.Prototype
             var root = new GameObject("Target Health", typeof(Canvas));
             root.transform.SetParent(transform, false);
             root.transform.localPosition = Vector3.up * 1.6f;
-            root.transform.localScale = Vector3.one * 0.018f;
+            root.transform.localScale = Vector3.one * 0.011f;
             healthDisplay = root.transform;
             root.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
             root.GetComponent<RectTransform>().sizeDelta = new Vector2(180, 55);
@@ -72,12 +72,18 @@ namespace DrForms.Prototype
         public void TakeDamage(int damage)
         {
             if (Health <= 0 || damage <= 0) return;
+            PrototypePresentation.Damage(transform.position + new Vector3(0, 2.2f, .4f), damage);
             DamageApplications++;
             hitUntil = Time.time + 0.12f;
             Health = Mathf.Max(0, Health - damage);
             RefreshHealth();
             PrototypeAudio.Play(1);
             PrototypeCombatEffect.Spawn(transform.position, PrototypeCharacterVisual.Paint(8), new Color(1,.8f,.35f), .5f, .2f, "Wand Impact");
+            for(int i=0;i<3;i++) {
+                float angle=i*Mathf.PI*2/3;
+                PrototypeCombatEffect.Spawn(transform.position+new Vector3(Mathf.Cos(angle)*.35f,.1f,Mathf.Sin(angle)*.35f),
+                    PrototypeCharacterVisual.Paint(11),new Color(1,.94f,.6f),.13f,.22f,"Impact Spark");
+            }
             if (Health == 0)
             {
                 PrototypeCombatEffect.Spawn(transform.position, body.sharedMaterial,

@@ -86,6 +86,15 @@ separate from question, background and ending pauses. Sound preference persists
 in browser local storage; assessment/run progress is still in memory. Retry
 preserves submitted answers/upgrades. The default preview hides developer
 diagnostics; use `?devDiagnostics=1` explicitly for troubleshooting. The menu
-shows `GARDEN-QUEST-3`. Phone layouts use a safe-area-aware canvas and browser
+shows `GARDEN-QUEST-4`. Phone layouts use a safe-area-aware canvas and browser
 insets. Physical iPhone verification of this new polish is pending; the user
 confirmed movement and attack in the preceding SAFARI-FOCUS-2 build.
+
+
+Garden Quest's presentation now uses a closer overhead camera, continuous tiled
+grass beyond the unchanged collision boundaries, outer paths, beveled border
+stones and procedural cypress/fern scenery. Shared soft mesh contacts ground
+characters without real-time shadow maps. Articulated arms/boots, facing/cast/hit/
+defeat motion, bounded movement dust/impact sparks and up to twelve short damage
+numbers remain original procedural art, with no purchased/downloaded assets.
+This improves the prototype; it does not provide commercial character art.

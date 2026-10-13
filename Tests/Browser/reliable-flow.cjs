@@ -6,7 +6,18 @@ const root = process.env.DRFORMS_FLOW_BUILD_PATH || path.join(artifacts, 'GamePr
 const port = Number(process.env.DRFORMS_FLOW_PORT || 8766);
 const result = { sessions: [], checks: [] };
 const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
-const lag = s => Math.hypot(s.camera.x - s.position.x - 8, s.camera.y - s.position.y - 14, s.camera.z - s.position.z + 10);
+// Check all four viewport rays, including the ground behind touch controls.
+const groundCoverage = s => {
+  const f=s.forward,n=Math.hypot(f.x,f.z),r={x:f.z/n,y:0,z:-f.x/n};
+  const u={x:f.y*r.z,y:f.z*r.x-f.x*r.z,z:-f.y*r.x};
+  const tan=Math.tan(s.fieldOfView*Math.PI/360),aspect=s.screenWidth/s.screenHeight;
+  for(const x of [-1,1])for(const y of [-1,1]) {
+    const d={x:f.x+r.x*x*tan*aspect+u.x*y*tan,y:f.y+u.y*y*tan,z:f.z+r.z*x*tan*aspect+u.z*y*tan};
+    assert(d.y<0,'Camera reveals sky');
+    const t=(.006-s.camera.y)/d.y;
+    assert(t>0&&Math.abs(s.camera.x+d.x*t)<79&&Math.abs(s.camera.z+d.z*t)<79,'Camera reveals scenery edge');
+  }
+};
 const server = http.createServer((req, res) => {
   const name = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
   const file = path.resolve(root, '.' + (name === '/' ? '/index.html' : name));
@@ -62,6 +73,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
         while (target.states.length === before && Date.now() < deadline) await page.waitForTimeout(20);
         assert(target.states.length > before, 'No state received');
         const s = target.states.at(-1);
+        groundCoverage(s);
         assert(Math.abs(s.position.x) < 9.7 && Math.abs(s.position.z) < 9.7, 'Escaped arena');
         assert(Math.abs(s.position.y - 1) < 0.15, 'Player left floor');
         if(s.enemyAlive) { assert(Math.abs(s.enemyPosition.x)<9.6 && Math.abs(s.enemyPosition.z)<9.6, 'Enemy escaped arena'); assert(Math.abs(s.enemyPosition.y-1)<0.15, 'Enemy left floor'); }
@@ -129,7 +141,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
       const f=s.forward,norm=Math.hypot(f.x,f.z),r={x:f.z/norm,y:0,z:-f.x/norm};
       const u={x:f.y*r.z,y:f.z*r.x-f.x*r.z,z:-f.y*r.x};
       const v={x:world.x-s.camera.x,y:-s.camera.y,z:world.z-s.camera.z};
-      const dot=a=>a.x*v.x+a.y*v.y+a.z*v.z,focal=s.screenHeight/2/Math.tan(Math.PI/6),depth=dot(f);
+      const dot=a=>a.x*v.x+a.y*v.y+a.z*v.z,focal=s.screenHeight/2/Math.tan(s.fieldOfView*Math.PI/360),depth=dot(f);
       return {x:s.screenWidth/2+dot(r)*focal/depth,y:s.screenHeight/2+dot(u)*focal/depth};
     };
     const option=async(t,s,index)=>{
@@ -204,6 +216,11 @@ function passed(name, details) { result.checks.push({ name, details }); console.
       let angle=Math.hypot(s.position.x,s.position.z)>1?Math.atan2(s.position.z,s.position.x)+Math.PI/6:0;
       const end=Date.now()+100000;
       while(!s.questionPaused && !s.defeated && Date.now()<end){
+        const framing=s.screenWidth>s.screenHeight?'landscape':'portrait';
+        if(!t.target['capture'+framing]) {
+          t.target['capture'+framing]=true;
+          await t.page.screenshot({path:path.join(artifacts,`visual-after-${t.target.phone?'phone':t.target.touch?'tablet':'desktop'}-${framing}.png`)});
+        }
         observedTelegraph ||= s.telegraphCount>0;
         if(s.telegraphCount>0 && !t.target.telegraphScreenshot) {
           t.target.telegraphScreenshot=true;
@@ -424,6 +441,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
     passed('Gradual single ranged enemy, real windup and ranged attacks observed across completed runs');
     result.environment = {browser:browser.version(),renderer:'Windows installed Chrome headless / SwiftShader; deviceScaleFactor 1; automated mouse and emulated touch'};
     for(const target of result.sessions)assert(!target.events.some(e=>['error','pageerror','requestfailed','http-error'].includes(e.type)),JSON.stringify(target.events));
+    passed('Full viewport ground coverage holds for every portrait, landscape and camera-follow snapshot');
     passed('No browser errors, page exceptions, or failed requests');
   }catch(error){result.error=error.stack;console.error(error);process.exitCode=1;}
   finally{fs.writeFileSync(path.join(artifacts,'reliable-flow-browser-result.json'),JSON.stringify(result,null,2));if(browser)await browser.close();server.close();}

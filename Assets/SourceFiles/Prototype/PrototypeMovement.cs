@@ -198,6 +198,7 @@ namespace DrForms.Prototype
                 targetScreen = target != null ? Project(target.transform.position) : Vector3.zero,
                 position = transform.position,
                 destination = destination, hasDestination = hasDestination, arrived = arrived,
+                fieldOfView = view != null ? view.fieldOfView : 50,
                 camera = movementCamera != null ? movementCamera.position : Vector3.zero,
                 forward = movementCamera != null ? movementCamera.forward : Vector3.forward,
                 input = controls.JoystickValue, touchMode = controls.TouchMode, focused = controls.HasFocus,
@@ -257,6 +258,7 @@ namespace DrForms.Prototype
             public Vector3 position, destination, camera, forward, playerFloorScreen, eastFloorScreen;
             public Vector2 input, joystickCenter, attackCenter, hudCenter;
             public bool touchMode, focused, pointerInside, hasDestination, arrived, attackActive;
+            public float fieldOfView;
             public float time, movingSeconds, requestedDistance, traveledDistance;
             public float joystickRadius;
             public int sideCollisionFrames, attackCount, screenWidth, screenHeight;

@@ -49,7 +49,7 @@ Answer/Retry/New Run controls.
 For the Garden Quest LAN preview (diagnostics off by default):
 
 ```powershell
-$env:DRFORMS_PREVIEW_ROOT = 'C:\Users\21654\DrFormsGame-WebVerification\GardenFinalPolishBuild'
+$env:DRFORMS_PREVIEW_ROOT = 'C:\Users\21654\DrFormsGame-WebVerification\GardenVisualReleaseBuild'
 node Tests/Browser/wifi-preview.cjs
 ```
 
@@ -58,7 +58,7 @@ regression suite. CSS safe-area insets pad the actual canvas; its rendering
 pixel ratio is capped at 1.5. Use `?devDiagnostics=1` only for developer
 troubleshooting. Both the panel and Unity reporter require that explicit URL;
 normal gameplay has no phone diagnostic overlay. The menu shows a small
-`GARDEN-QUEST-3` identifier. Physical notch behavior still requires a device.
+`GARDEN-QUEST-4` identifier. Physical notch behavior still requires a device.
 
 Controls: Play starts a run and activates procedural browser audio. Desktop
 mouse movement follows the garden floor; click casts at the nearest target.
@@ -74,7 +74,7 @@ A short visible shield protects Play/Resume/question/focus recovery.
 Supplementary actual-browser UI/audio/layout checks:
 
 ```powershell
-$env:DRFORMS_FLOW_BUILD_PATH = 'C:\Users\21654\DrFormsGame-WebVerification\GardenFinalPolishBuild'
+$env:DRFORMS_FLOW_BUILD_PATH = 'C:\Users\21654\DrFormsGame-WebVerification\GardenVisualReleaseBuild'
 node Tests/Browser/polish-ui.cjs
 node Tests/Browser/audio-bridge.cjs
 ```
@@ -89,3 +89,20 @@ projectile/effect caps and Unity frame counters. Its performance figures are
 headless Chrome/SwiftShader measurements with automation overhead, not iPhone
 or hardware GPU performance. Build output, screenshots, logs and results remain
 outside Git. Do not serve a directory while Unity is rebuilding it.
+
+
+Visual presentation boundary checks:
+
+```powershell
+node Tests/Browser/visual-presentation.cjs
+```
+
+Use the same external build/artifact/Playwright variables above. This suite uses
+loopback 8768 and actual emulated touch movement against all four walls and two
+opposite corners in portrait and landscape. It walks around the preserved
+practice totem for the north-wall check. It captures combat, touch controls,
+impacts and boundary screenshots for manual visual inspection. No gameplay
+state is injected; fresh runs use the existing Pause / Restart UI. The full
+flow suite projects all four viewport corners onto the ground throughout each
+run to check that the camera never reveals the extended floor's edges. Its
+mouse projection uses the actual camera field of view from read-only snapshots.

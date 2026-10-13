@@ -75,8 +75,9 @@ namespace DrForms.Prototype
                     for (int i=0;i<q.options.Length;i++) q.options[i] += " - This is a longer example answer with extra explanation so that we can check wrapping, scrolling, and selection on a small phone. Read the whole choice before deciding; selecting it does not submit it. You may change your choice before using the fixed Submit Answer action.";
                 }
             var root = controls.UIRoot;
-            var status = PrototypeControls.Rect("Question Progress", root, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -123), new Vector2(360, 30));
-            progress = PrototypeControls.Label("Question Progress Text", status, "", 20);
+            var status = PrototypeControls.Rect("Question Progress", root, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-95, -105), new Vector2(180, 24));
+            progress = PrototypeControls.Label("Question Progress Text", status, "", 14);
+            progress.resizeTextForBestFit = true; progress.resizeTextMinSize = 10; progress.resizeTextMaxSize = 14;
             panel = PrototypeControls.Rect("Question Screen", root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             panel.gameObject.AddComponent<Image>().color = new Color(0.02f, 0.04f, 0.08f, 1);
             var step = PrototypeControls.Rect("Fixed Question Progress", panel, new Vector2(.05f,.95f), new Vector2(.95f,1), Vector2.zero, Vector2.zero);

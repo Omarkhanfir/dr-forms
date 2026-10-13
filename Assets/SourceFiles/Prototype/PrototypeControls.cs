@@ -14,7 +14,7 @@ namespace DrForms.Prototype
         public bool GameplayEnabled { get; private set; } = true;
         public bool InputReady => HasFocus && epoch == PrototypeBrowserInput.Epoch
             && !waitingForRelease && Time.frameCount > inputResumeFrame;
-        public const string BuildId = "GARDEN-QUEST-3";
+        public const string BuildId = "GARDEN-QUEST-4";
         public bool Started { get; private set; }
         public bool ManualPaused { get; private set; }
         public bool CanPlay => GameplayEnabled && Started && !ManualPaused && InputReady;
@@ -276,17 +276,17 @@ namespace DrForms.Prototype
             safeArea = Rect("Safe Area", root.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             UpdateSafeArea();
             hud = Rect("Instructions", safeArea, new Vector2(0, 1), new Vector2(1, 1),
-                new Vector2(0, -22), new Vector2(-24, 38));
+                new Vector2(0, -18), new Vector2(-24, 28));
             var panel = hud.gameObject.AddComponent<Image>();
             panel.color = new Color(0.04f, 0.07f, 0.12f, 0.88f);
             normalInstruction = TouchMode ? "GARDEN QUEST | Move + tap to cast" : "GARDEN QUEST | Mouse to move | Click to cast";
-            instruction = Label("Instructions Text", hud, normalInstruction, 18);
+            instruction = Label("Instructions Text", hud, normalInstruction, 14);
             circle = CreateCircle();
             var pad = Rect("Left Thumb Joystick", safeArea, Vector2.zero, Vector2.zero,
-                new Vector2(120, 120), new Vector2(180, 180));
+                new Vector2(120, 120), new Vector2(164, 164));
             var padImage = pad.gameObject.AddComponent<Image>();
             padImage.sprite = circle;
-            padImage.color = new Color(0.08f, 0.2f, 0.3f, 0.9f);
+            padImage.color = new Color(0.08f, 0.2f, 0.3f, 0.38f);
             var knob = Rect("Joystick Knob", pad, Vector2.one * 0.5f, Vector2.one * 0.5f,
                 Vector2.zero, new Vector2(64, 64));
             var knobImage = knob.gameObject.AddComponent<Image>();
@@ -297,10 +297,10 @@ namespace DrForms.Prototype
             joystick.Owner = this;
             joystick.Knob = knob;
             attackButton = Rect("Right Thumb Attack", safeArea, new Vector2(1, 0), new Vector2(1, 0),
-                new Vector2(-115, 115), new Vector2(150, 150));
+                new Vector2(-115, 115), new Vector2(136, 136));
             var attackImage = attackButton.gameObject.AddComponent<Image>();
             attackImage.sprite = circle;
-            attackImage.color = new Color(0.8f, 0.2f, 0.12f, 0.95f);
+            attackImage.color = new Color(0.10f, 0.36f, 0.38f, 0.62f);
             Label("Attack Label", attackButton, "ATTACK", 22);
             attackButton.gameObject.AddComponent<PrototypeAttackButton>().Owner = this;
             pad.gameObject.SetActive(TouchMode);
@@ -311,16 +311,16 @@ namespace DrForms.Prototype
         private void CreateHealthAndDefeatUI()
         {
             var healthBar = Rect("Player Health", safeArea, new Vector2(0.5f, 1), new Vector2(0.5f, 1),
-                new Vector2(0, -62), new Vector2(280, 30));
+                new Vector2(0, -62), new Vector2(230, 23));
             healthBar.gameObject.AddComponent<Image>().color = new Color(0.15f, 0.05f, 0.07f, 0.95f);
             var fillRect = Rect("Player Health Fill", healthBar, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             healthFill = fillRect.gameObject.AddComponent<Image>();
             healthFill.color = new Color(0.15f, 0.6f, 0.3f);
             healthFill.raycastTarget = false;
-            healthLabel = Label("Player Health Text", healthBar, "Health", 20);
-            var waveBar = Rect("Wave Status", safeArea, new Vector2(0.5f, 1), new Vector2(0.5f, 1),
-                new Vector2(0, -94), new Vector2(440, 30));
-            waveLabel = Label("Wave Text", waveBar, "Wave 1 / 3", 20);
+            healthLabel = Label("Player Health Text", healthBar, "Health", 16);
+            var waveBar = Rect("Wave Status", safeArea, new Vector2(0, 1), new Vector2(0, 1),
+                new Vector2(95, -105), new Vector2(170, 24));
+            waveLabel = Label("Wave Text", waveBar, "Wave 1 / 3", 16);
 
             defeatPanel = Rect("Defeat Screen", safeArea, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             defeatPanel.gameObject.AddComponent<Image>().color = new Color(0.02f, 0.04f, 0.08f, 0.94f);
@@ -346,10 +346,10 @@ namespace DrForms.Prototype
             var reward = Rect("Upgrade Notice", safeArea, new Vector2(.15f,.65f), new Vector2(.85f,.65f), Vector2.zero, new Vector2(0,40));
             rewardLabel = Label("Wand Upgrade", reward, "", 24); rewardLabel.color = new Color(1,.88f,.42f);
             rewardLabel.resizeTextForBestFit = true; rewardLabel.resizeTextMinSize = 14; rewardLabel.resizeTextMaxSize = 24;
-            var shield = Rect("Grace Status", safeArea, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -151), new Vector2(360, 24));
-            graceLabel = Label("Shield", shield, "", 16);
-            pauseButton = MenuButton("Pause", safeArea, new Vector2(0, 1), new Vector2(54, -190), new Vector2(96, 44), Pause);
-            muteButton = MenuButton("Sound: on", safeArea, new Vector2(1, 1), new Vector2(-62, -190), new Vector2(112, 44), () => PrototypeAudio.ToggleMute());
+            var shield = Rect("Grace Status", safeArea, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -85), new Vector2(270, 18));
+            graceLabel = Label("Shield", shield, "", 12);
+            pauseButton = MenuButton("Pause", safeArea, new Vector2(0, 1), new Vector2(48, -61), new Vector2(80, 36), Pause);
+            muteButton = MenuButton("Sound: on", safeArea, new Vector2(1, 1), new Vector2(-52, -61), new Vector2(90, 36), () => PrototypeAudio.ToggleMute());
             muteLabel = muteButton.GetComponentInChildren<Text>();
             menu = Rect("Adventure Menu", safeArea, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             menu.gameObject.AddComponent<Image>().color = new Color(0.035f, 0.12f, 0.16f, 1f);

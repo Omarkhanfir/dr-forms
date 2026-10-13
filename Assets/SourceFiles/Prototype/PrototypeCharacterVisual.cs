@@ -6,8 +6,11 @@ namespace DrForms.Prototype
     // Shared matte palette and collision-free parts; the existing controller stays authoritative.
     public sealed class PrototypeCharacterVisual : MonoBehaviour
     {
+        private static Mesh bevelMesh;
         private static readonly Dictionary<int, Material> palette = new Dictionary<int, Material>();
-        private Transform rig, leftLeg, rightLeg, weapon, gem, shield;
+        private Transform rig, leftLeg, rightLeg, leftArm, rightArm, weapon, gem, shield;
+        private int lastHits;
+        private float hitUntil, nextDust;
         private PrototypeCombat combat;
         private PrototypePlayerHealth player;
         private PrototypeTarget target;
@@ -26,15 +29,32 @@ namespace DrForms.Prototype
             material.enableInstancing = true; palette[key] = material; return material;
         }
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetPalette() { foreach(var mat in palette.Values) if(mat != null) Destroy(mat); palette.Clear(); }
+        private static void ResetPalette() { foreach(var mat in palette.Values) if(mat != null) Destroy(mat); palette.Clear(); if(bevelMesh!=null)Destroy(bevelMesh);bevelMesh=null; }
         internal static Transform Part(Transform parent, string name, PrimitiveType shape, Vector3 position, Vector3 scale, int color)
         {
             var part = GameObject.CreatePrimitive(shape); part.name = name; part.transform.SetParent(parent, false);
             part.transform.localPosition = position; part.transform.localScale = scale;
             var collision = part.GetComponent<Collider>(); collision.enabled = false; Destroy(collision);
+            if(shape==PrimitiveType.Cube)part.GetComponent<MeshFilter>().sharedMesh=BeveledBox();
             var renderer = part.GetComponent<Renderer>(); renderer.sharedMaterial = Paint(color);
             renderer.shadowCastingMode = ShadowCastingMode.Off; renderer.receiveShadows = true;
             return part.transform;
+        }
+        private static Mesh BeveledBox()
+        {
+            if(bevelMesh!=null)return bevelMesh;
+            var vertices=new List<Vector3>();var triangles=new List<int>();
+            Vector2[] ring={new Vector2(-.36f,-.5f),new Vector2(.36f,-.5f),new Vector2(.5f,-.36f),new Vector2(.5f,.36f),new Vector2(.36f,.5f),new Vector2(-.36f,.5f),new Vector2(-.5f,.36f),new Vector2(-.5f,-.36f)};
+            for(int level=0;level<4;level++)for(int i=0;i<8;i++) {
+                float scale=level==0||level==3?.8f:1;
+                vertices.Add(new Vector3(ring[i].x*scale,level==0?-.5f:level==1?-.36f:level==2?.36f:.5f,ring[i].y*scale));
+            }
+            for(int level=0;level<3;level++)for(int i=0;i<8;i++){
+                int a=level*8+i,b=level*8+(i+1)%8;
+                triangles.AddRange(new[]{a,a+8,b,b,a+8,b+8});
+            }
+            for(int i=1;i<7;i++){triangles.AddRange(new[]{0,i,i+1,24,24+i+1,24+i});}
+            bevelMesh=new Mesh{name="Original Beveled Form"};bevelMesh.SetVertices(vertices);bevelMesh.SetTriangles(triangles,0);bevelMesh.RecalculateNormals();return bevelMesh;
         }
         private void Start()
         {
@@ -46,24 +66,31 @@ namespace DrForms.Prototype
             else if (GetComponent<PrototypeEnemy>() != null) Mushroom();
             else TrainingTotem();
             if(gem!=null) gemRenderer=gem.GetComponent<Renderer>();
+            PrototypePresentation.Contact(transform,new Vector3(0,-.98f,0),player!=null?1.25f:1.45f);
             previous = transform.position;
         }
         private void Adventurer()
         {
             Part(rig,"Tunic",PrimitiveType.Capsule,new Vector3(0,1,0),new Vector3(.66f,.48f,.5f),0);
             Part(rig,"Belt",PrimitiveType.Cube,new Vector3(0,.81f,0),new Vector3(.68f,.12f,.52f),3);
-            Part(rig,"Head",PrimitiveType.Sphere,new Vector3(0,1.65f,0),Vector3.one*.55f,1);
+            Part(rig,"Head",PrimitiveType.Sphere,new Vector3(0,1.65f,0),Vector3.one*.65f,1);
             Part(rig,"Hair",PrimitiveType.Sphere,new Vector3(0,1.79f,-.04f),new Vector3(.57f,.35f,.56f),3);
             Part(rig,"Hat Brim",PrimitiveType.Cylinder,new Vector3(0,1.94f,0),new Vector3(.82f,.04f,.82f),4);
             Part(rig,"Hat Crown",PrimitiveType.Sphere,new Vector3(0,2.04f,0),new Vector3(.51f,.36f,.51f),4);
+            Part(rig,"Satchel",PrimitiveType.Sphere,new Vector3(-.31f,.83f,-.22f),new Vector3(.3f,.37f,.22f),3);
+            Part(rig,"Face L",PrimitiveType.Sphere,new Vector3(-.11f,1.66f,.31f),Vector3.one*.065f,2);
+            Part(rig,"Face R",PrimitiveType.Sphere,new Vector3(.11f,1.66f,.31f),Vector3.one*.065f,2);
             Part(rig,"Scarf",PrimitiveType.Cube,new Vector3(0,1.39f,.2f),new Vector3(.65f,.15f,.16f),8);
-            Part(rig,"Left Arm",PrimitiveType.Capsule,new Vector3(-.4f,1.05f,0),new Vector3(.2f,.27f,.2f),0);
-            Part(rig,"Right Arm",PrimitiveType.Capsule,new Vector3(.4f,1.05f,.1f),new Vector3(.2f,.27f,.2f),0);
+            leftArm=Part(rig,"Left Arm",PrimitiveType.Capsule,new Vector3(-.4f,1.05f,0),new Vector3(.2f,.27f,.2f),0);
+            rightArm=Part(rig,"Right Arm",PrimitiveType.Capsule,new Vector3(.4f,1.05f,.1f),new Vector3(.2f,.27f,.2f),0);
             leftLeg=Part(rig,"Left Boot",PrimitiveType.Capsule,new Vector3(-.18f,.38f,0),new Vector3(.25f,.3f,.32f),2);
             rightLeg=Part(rig,"Right Boot",PrimitiveType.Capsule,new Vector3(.18f,.38f,0),new Vector3(.25f,.3f,.32f),2);
             weapon=Part(rig,"Sunwood Wand",PrimitiveType.Cylinder,new Vector3(.54f,1.1f,.34f),new Vector3(.1f,.6f,.1f),8);
             gem=Part(weapon,"Wand Crystal",PrimitiveType.Sphere,new Vector3(0,1.15f,0),new Vector3(3, .4f,3),7);
-            shield=Part(transform,"Grace Halo",PrimitiveType.Cylinder,new Vector3(0,-.94f,0),new Vector3(1.65f,.018f,1.65f),7);
+            shield=new GameObject("Grace Halo").transform;shield.SetParent(transform,false);shield.localPosition=new Vector3(0,-.97f,0);
+            var halo=shield.gameObject.AddComponent<LineRenderer>();halo.useWorldSpace=false;halo.loop=true;halo.positionCount=40;halo.widthMultiplier=.045f;halo.sharedMaterial=Paint(7);
+            halo.shadowCastingMode=ShadowCastingMode.Off;halo.receiveShadows=false;
+            for(int i=0;i<40;i++)halo.SetPosition(i,new Vector3(Mathf.Cos(i*Mathf.PI/20)*.7f,0,Mathf.Sin(i*Mathf.PI/20)*.7f));
         }
         private void Mushroom()
         {
@@ -114,7 +141,11 @@ namespace DrForms.Prototype
             if(combat!=null && combat.MuzzleActive) rig.rotation=Quaternion.Slerp(rig.rotation,Quaternion.LookRotation(combat.AimDirection),Time.deltaTime*20);
             else if(moving) rig.rotation=Quaternion.Slerp(rig.rotation,Quaternion.LookRotation(delta),Time.deltaTime*14);
             phase+=Time.deltaTime*(moving?12:2);
-            float recoil=combat!=null && combat.MuzzleActive ? .16f : target!=null && target.HitFlashActive ? -.12f : 0;
+            int hits=player!=null?player.DamageApplications:target!=null?target.DamageApplications:0;
+            if(hits!=lastHits){lastHits=hits;hitUntil=Time.time+.2f;}
+            if(moving && Time.time>=nextDust){nextDust=Time.time+.18f;PrototypeCombatEffect.Spawn(transform.position+new Vector3(0,-.92f,-.12f),Paint(10),new Color(.72f,.72f,.5f),.16f,.3f,"Footstep Dust");}
+            if(leftArm!=null){leftArm.localRotation=Quaternion.Euler(moving?-Mathf.Sin(phase)*28:0,0,12);rightArm.localRotation=Quaternion.Euler(combat.MuzzleActive?-55:moving?Mathf.Sin(phase)*28:0,0,-12);}
+            float recoil=combat!=null && combat.MuzzleActive ? .16f : Time.time<hitUntil ? -.12f : 0;
             rig.localPosition=Vector3.down+Vector3.up*(Mathf.Sin(phase)*(moving?.055f:.015f)+recoil);
             rig.localScale=new Vector3(1, recoil<0?.86f:1,1);
             if(leftLeg!=null) {leftLeg.localRotation=Quaternion.Euler(moving?Mathf.Sin(phase)*24:0,0,0);rightLeg.localRotation=Quaternion.Euler(moving?-Mathf.Sin(phase)*24:0,0,0);}
@@ -126,29 +157,53 @@ namespace DrForms.Prototype
     public sealed class PrototypeGarden : MonoBehaviour
     {
         private GameObject decorations;
+        private Mesh groundMesh;
+        private Material groundMaterial;
         private void Start()
         {
-            decorations=new GameObject("Garden Border Decorations");
-            var ground=GameObject.Find("Arena Ground");if(ground!=null)ground.GetComponent<Renderer>().sharedMaterial=PrototypeCharacterVisual.Paint(9);
-            foreach(var name in new[]{"North Wall","South Wall","East Wall","West Wall"}) {
-                var wall=GameObject.Find(name);if(wall!=null)wall.GetComponent<Renderer>().sharedMaterial=PrototypeCharacterVisual.Paint(10);
+            decorations = new GameObject("Continuous Garden Scenery");
+            var ground = GameObject.Find("Arena Ground");
+            if (ground != null) ground.GetComponent<Renderer>().enabled = false;
+            // A single vertex-coloured mesh extends well beyond unchanged floor/wall collision.
+            var vertices = new List<Vector3>(); var colors = new List<Color>(); var triangles = new List<int>();
+            for (int z = -40; z < 40; z++) for (int x = -40; x < 40; x++) {
+                int first = vertices.Count;
+                float shade = ((x * 17 + z * 31) & 3) * .009f;
+                bool path = Mathf.Abs(x * 2 + 1) > 11 && Mathf.Abs(x * 2 + 1) < 15 || Mathf.Abs(z * 2 + 1) > 11 && Mathf.Abs(z * 2 + 1) < 15;
+                Color color = path ? new Color(.48f + shade, .46f + shade, .28f + shade) : new Color(.28f + shade, .48f + shade, .12f + shade);
+                vertices.Add(new Vector3(x*2,.006f,z*2)); vertices.Add(new Vector3(x*2,.006f,z*2+2));
+                vertices.Add(new Vector3(x*2+2,.006f,z*2+2)); vertices.Add(new Vector3(x*2+2,.006f,z*2));
+                for (int i=0;i<4;i++) colors.Add(color);
+                triangles.AddRange(new[]{first,first+1,first+2,first,first+2,first+3});
             }
-            RenderSettings.ambientLight=new Color(.65f,.72f,.64f);
-            if(Camera.main!=null)Camera.main.backgroundColor=new Color(.64f,.82f,.79f);
-            // All decoration lives beyond the existing walls (inside edge +/-10).
-            for(int side=0;side<4;side++)for(int n=-2;n<=2;n++) {
-                Vector3 pos=side<2?new Vector3(n*4,0,side==0?12:-12):new Vector3(side==2?12:-12,0,n*4);
-                var tree=new GameObject("Border Topiary").transform;tree.SetParent(decorations.transform);tree.position=pos;
-                PrototypeCharacterVisual.Part(tree,"Trunk",PrimitiveType.Cylinder,new Vector3(0,.9f,0),new Vector3(.32f,.9f,.32f),3);
-                PrototypeCharacterVisual.Part(tree,"Crown",PrimitiveType.Sphere,new Vector3(0,2.3f,0),new Vector3(1.6f,2,1.6f),5);
-                PrototypeCharacterVisual.Part(tree,"Fruit",PrimitiveType.Sphere,new Vector3(.48f,2.3f,-.55f),Vector3.one*.3f,8);
+            groundMesh = new Mesh { name = "Quiet Garden Tiles" }; groundMesh.SetVertices(vertices); groundMesh.SetColors(colors); groundMesh.SetTriangles(triangles,0); groundMesh.RecalculateNormals();
+            var carpet = new GameObject("Full Viewport Grass",typeof(MeshFilter),typeof(MeshRenderer)); carpet.transform.SetParent(decorations.transform);
+            carpet.GetComponent<MeshFilter>().sharedMesh = groundMesh;
+            groundMaterial = new Material(Shader.Find("DrForms/Garden Ground")); carpet.GetComponent<Renderer>().sharedMaterial = groundMaterial;
+            foreach (var name in new[]{"North Wall","South Wall","East Wall","West Wall"}) {
+                var wall=GameObject.Find(name); if(wall!=null) wall.GetComponent<Renderer>().enabled=false;
             }
-            // A narrow garden rim sits on the walls and has no new collision.
-            for(int side=0;side<4;side++) {
-                Vector3 pos=side<2?new Vector3(0,2.04f,side==0?10.5f:-10.5f):new Vector3(side==2?10.5f:-10.5f,2.04f,0);
-                PrototypeCharacterVisual.Part(decorations.transform,"Moss Wall Cap",PrimitiveType.Cube,pos,side<2?new Vector3(22,.12f,1):new Vector3(1,.12f,22),5);
+            RenderSettings.ambientLight = new Color(.64f,.69f,.60f);
+            var light = GameObject.Find("Arena Light").GetComponent<Light>(); light.intensity=1.05f; light.transform.rotation=Quaternion.Euler(65,-35,0);
+            light.shadows=LightShadows.None; // Soft mesh contacts avoid shadow-map bandwidth and jagged wall shadows.
+            for(int side=0;side<4;side++) for(int n=-5;n<=5;n++) {
+                Vector3 pos=side<2?new Vector3(n*2,.25f,side==0?10.65f:-10.65f):new Vector3(side==2?10.65f:-10.65f,.25f,n*2);
+                var stone=PrototypeCharacterVisual.Part(decorations.transform,"Rounded Boundary Stone",PrimitiveType.Cube,pos,side<2?new Vector3(1.9f,.5f,.8f):new Vector3(.8f,.5f,1.9f),10);
+                PrototypePresentation.Contact(stone, new Vector3(0,-.23f,0),2.1f);
+            }
+            // Vegetation stays outside every combat route and has no colliders.
+            for(int side=0;side<4;side++) for(int n=-4;n<=4;n++) {
+                Vector3 pos=side<2?new Vector3(n*4,0,side==0?16:-16):new Vector3(side==2?16:-16,0,n*4);
+                var tree=new GameObject("Garden Cypress").transform;tree.SetParent(decorations.transform);tree.position=pos;
+                PrototypeCharacterVisual.Part(tree,"Trunk",PrimitiveType.Cylinder,new Vector3(0,.8f,0),new Vector3(.28f,.8f,.28f),3);
+                for(int tier=0;tier<3;tier++) PrototypeCharacterVisual.Part(tree,"Leaf Canopy",PrimitiveType.Sphere,new Vector3(0,1.4f+tier*.6f,0),new Vector3(2-tier*.45f,1.5f,2-tier*.45f),tier%2==0?0:5);
+                PrototypePresentation.Contact(tree,new Vector3(0,.014f,0),2.6f);
+                for(int i=0;i<3;i++) {
+                    var bush=PrototypeCharacterVisual.Part(decorations.transform,"Border Fern",PrimitiveType.Sphere,pos+new Vector3(1.7f+i*.35f,.22f,.8f),new Vector3(.5f,.45f,.7f),5);
+                    bush.localRotation=Quaternion.Euler(0,i*45,20);
+                }
             }
         }
-        private void OnDestroy(){if(decorations!=null)Destroy(decorations);}
+        private void OnDestroy(){if(decorations!=null)Destroy(decorations);if(groundMesh!=null)Destroy(groundMesh);if(groundMaterial!=null)Destroy(groundMaterial);}
     }
 }
