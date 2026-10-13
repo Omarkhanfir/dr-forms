@@ -12,14 +12,15 @@ namespace DrForms.Prototype
         public bool IsDefeated => Health <= 0;
         public int DamageApplications { get; private set; }
         private bool restarting;
-        private float graceUntil;
+        private float graceUntil, nextDamage;
         public bool GraceActive => Time.time < graceUntil;
         public void GrantGrace() => graceUntil = Time.time + 1.5f;
         private void Awake() => Health = maximumHealth;
 
         public void TakeDamage(int damage)
         {
-            if (IsDefeated || damage <= 0 || GraceActive) return;
+            if (IsDefeated || damage <= 0 || GraceActive || Time.time < nextDamage) return;
+            nextDamage = Time.time + .65f;
             DamageApplications++;
             Health = Mathf.Max(0, Health - damage);
             PrototypeAudio.Play(1);
@@ -28,6 +29,7 @@ namespace DrForms.Prototype
             GetComponent<PrototypeControls>().SetGameplayEnabled(false);
             // Discard shots at defeat rather than allowing damage behind the defeat screen.
             foreach (var projectile in FindObjectsByType<PrototypeProjectile>()) projectile.Cancel();
+            PrototypeEnemyBolt.Clear();
         }
 
         public void RestartNewRun()

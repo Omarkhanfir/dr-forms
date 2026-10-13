@@ -35,14 +35,17 @@ namespace DrForms.Prototype
         private PrototypeCombat combat;
         private PrototypeWaves waves;
         private RectTransform panel, contentRect;
-        private Text progress, prompt;
+        private Text progress, prompt, questionStep;
         private PrototypeDeliberateButton submit;
         private string rewardFeedback = "";
         private readonly List<PrototypeDeliberateButton> options = new List<PrototypeDeliberateButton>();
         private readonly List<Text> labels = new List<Text>();
         private float previousTimeScale, neutralAt = -1;
         private int epoch, generation;
-        private bool ready;
+        private bool ready, layoutDirty = true;
+        private float lastLayoutWidth = -1;
+        private int displayedAnswers = -1;
+        private string displayedReward;
         private int selected = -1;
         public bool Paused => state != ScreenState.Closed;
         public int Selected => selected;
@@ -65,11 +68,19 @@ namespace DrForms.Prototype
             combat = GetComponent<PrototypeCombat>();
             waves = GetComponent<PrototypeWaves>();
             combat.AddDamage(earnedDamage);
+            // Development-only long-content fixture exercises the production scrolling UI.
+            if (Debug.isDebugBuild && Application.absoluteURL.Contains("longQuestions=1"))
+                foreach (var q in content) {
+                    q.prompt += " Imagine you are guiding a friend through the garden. Take your time to consider every choice. You can scroll to read all the text, change your choice, and then use the separate Submit Answer button when you are ready. There is no hurry; the creatures and the game clock wait while this question is open.";
+                    for (int i=0;i<q.options.Length;i++) q.options[i] += " - This is a longer example answer with extra explanation so that we can check wrapping, scrolling, and selection on a small phone. Read the whole choice before deciding; selecting it does not submit it. You may change your choice before using the fixed Submit Answer action.";
+                }
             var root = controls.UIRoot;
             var status = PrototypeControls.Rect("Question Progress", root, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -123), new Vector2(360, 30));
             progress = PrototypeControls.Label("Question Progress Text", status, "", 20);
             panel = PrototypeControls.Rect("Question Screen", root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             panel.gameObject.AddComponent<Image>().color = new Color(0.02f, 0.04f, 0.08f, 1);
+            var step = PrototypeControls.Rect("Fixed Question Progress", panel, new Vector2(.05f,.95f), new Vector2(.95f,1), Vector2.zero, Vector2.zero);
+            questionStep = PrototypeControls.Label("Question Number", step, "", 18);
             var viewport = PrototypeControls.Rect("Question Viewport", panel, new Vector2(0.05f, 0.24f), new Vector2(0.95f, 0.95f), Vector2.zero, Vector2.zero);
             viewport.gameObject.AddComponent<Image>().color = new Color(0.02f, 0.04f, 0.08f, 1);
             viewport.gameObject.AddComponent<RectMask2D>();
@@ -153,7 +164,9 @@ namespace DrForms.Prototype
         {
             if (controls == null) return;
             progress.gameObject.SetActive(controls.Started && !controls.ManualPaused);
-            progress.text = "Questions " + AnswerCount + " / " + content.Length + rewardFeedback;
+            if (displayedAnswers != AnswerCount || displayedReward != rewardFeedback) {
+                displayedAnswers = AnswerCount; displayedReward = rewardFeedback;
+                progress.text = "Questions " + AnswerCount + " / " + content.Length + rewardFeedback; }
             if (!Paused) return;
             if (!controls.HasFocus || epoch != PrototypeBrowserInput.Epoch) { Guard(); return; }
             if (ready) return;
@@ -172,14 +185,15 @@ namespace DrForms.Prototype
             if (Paused || wave != AnswerCount + 1 || wave > content.Length || GetComponent<PrototypePlayerHealth>().IsDefeated) return;
             state = ScreenState.Question; selected = -1; rewardFeedback = "";
             previousTimeScale = Time.timeScale; Time.timeScale = 0;
-            controls.SetGameplayEnabled(false); Guard();
-            prompt.text = "Question " + wave + " / " + content.Length + "\n" + content[AnswerCount].prompt;
+            controls.SetGameplayEnabled(false); PrototypeEnemyBolt.Clear(); Guard();
+            questionStep.text = "Question " + wave + " / " + content.Length;
+            prompt.text = content[AnswerCount].prompt;
             foreach (var option in options) { option.gameObject.SetActive(true); option.GetComponent<Image>().color = new Color(0.1f, 0.45f, 0.4f); }
             for (var i = 0; i < options.Count; i++) labels[i].text = content[AnswerCount].options[i];
             submit.gameObject.SetActive(true); submit.interactable = false;
             contentRect.anchoredPosition = Vector2.zero;
             panel.gameObject.SetActive(true);
-            ResizeText();
+            layoutDirty = true; ResizeText();
         }
 
         private void LateUpdate() { if (Paused) ResizeText(); }
@@ -187,6 +201,8 @@ namespace DrForms.Prototype
         {
             // Recompute wrapped heights on rotation/resizing as well as when content changes.
             var width = Mathf.Max(80, contentRect.rect.width - 32);
+            if (!layoutDirty && Mathf.Abs(width-lastLayoutWidth) < .5f) return;
+            layoutDirty = false; lastLayoutWidth = width;
             var settings = prompt.GetGenerationSettings(new Vector2(width, 0));
             prompt.transform.parent.GetComponent<LayoutElement>().preferredHeight = Mathf.Max(100,
                 prompt.cachedTextGeneratorForLayout.GetPreferredHeight(prompt.text, settings) / prompt.pixelsPerUnit + 24);
@@ -198,7 +214,7 @@ namespace DrForms.Prototype
         private void Select(int index)
         {
             if (state != ScreenState.Question || !InputReady) return;
-            selected = index;
+            selected = index; layoutDirty = true;
             for (var i = 0; i < options.Count; i++)
             {
                 labels[i].text = (i == selected ? "[Selected] " : "") + content[AnswerCount].options[i];
@@ -221,6 +237,7 @@ namespace DrForms.Prototype
             Guard(); panel.gameObject.SetActive(false);
             controls.Suspend(); Time.timeScale = previousTimeScale;
             PrototypeAudio.Play(2);
+            controls.NotifyReward(reward);
             waves.CompleteAnsweredWave();
         }
         private void OnDestroy() { if (Paused) Time.timeScale = previousTimeScale; }

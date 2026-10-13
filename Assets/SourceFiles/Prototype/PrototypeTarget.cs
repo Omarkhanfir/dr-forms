@@ -7,7 +7,11 @@ namespace DrForms.Prototype
     {
         [SerializeField, Min(1)] private int maximumHealth = 100;
         [SerializeField] private string displayName = "Target";
+        internal static readonly System.Collections.Generic.List<PrototypeTarget> Active = new System.Collections.Generic.List<PrototypeTarget>();
+        private void OnEnable() { if (!Active.Contains(this)) Active.Add(this); }
+        private void OnDisable() => Active.Remove(this);
         public int Health { get; private set; }
+        public void SetDisplayName(string value) { displayName = value; if (label != null) RefreshHealth(); }
         private Text label;
         private Image fill;
         private Transform healthDisplay;
@@ -72,6 +76,8 @@ namespace DrForms.Prototype
             hitUntil = Time.time + 0.12f;
             Health = Mathf.Max(0, Health - damage);
             RefreshHealth();
+            PrototypeAudio.Play(1);
+            PrototypeCombatEffect.Spawn(transform.position, PrototypeCharacterVisual.Paint(8), new Color(1,.8f,.35f), .5f, .2f, "Wand Impact");
             if (Health == 0)
             {
                 PrototypeCombatEffect.Spawn(transform.position, body.sharedMaterial,
@@ -83,7 +89,7 @@ namespace DrForms.Prototype
         }
         private void RefreshHealth()
         {
-            label.text = displayName + " " + Health + " / " + maximumHealth;
+            label.text = displayName;
 
         }
     }

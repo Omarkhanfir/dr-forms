@@ -14,7 +14,7 @@ namespace DrForms.Prototype
         public bool GameplayEnabled { get; private set; } = true;
         public bool InputReady => HasFocus && epoch == PrototypeBrowserInput.Epoch
             && !waitingForRelease && Time.frameCount > inputResumeFrame;
-        public const string BuildId = "GARDEN-QUEST-1";
+        public const string BuildId = "GARDEN-QUEST-3";
         public bool Started { get; private set; }
         public bool ManualPaused { get; private set; }
         public bool CanPlay => GameplayEnabled && Started && !ManualPaused && InputReady;
@@ -25,7 +25,12 @@ namespace DrForms.Prototype
         public Vector2 MenuRestartCenter => Center(menuRestartButton);
         private static Vector2 Center(RectTransform rect) => rect != null ? RectTransformUtility.WorldToScreenPoint(null, rect.position) : Vector2.zero;
         private RectTransform menu, playButton, pauseButton, muteButton, resumeButton, menuRestartButton;
-        private Text summary, muteLabel, menuMuteLabel, graceLabel;
+        private Text summary, muteLabel, menuMuteLabel, graceLabel, rewardLabel;
+        private float rewardUntil;
+        private RectTransform menuSound;
+        public Vector2 MenuSoundCenter => Center(menuSound);
+        private int lastHealth = -1, lastWave = -1, lastBreak = -1, summaryDamage = -1;
+        private bool wasDefeated;
         private PrototypeQuestions questions;
         private static bool returnToPlay;
         private float menuScale = 1;
@@ -115,22 +120,29 @@ namespace DrForms.Prototype
                 waitingForRelease = false;
                 // Ignore the reload frame's release/click before accepting fresh input.
                 inputResumeFrame = Time.frameCount;
+                if (Started && GameplayEnabled && !ManualPaused) playerHealth?.GrantGrace();
             }
             if (playerHealth != null)
             {
-                healthLabel.text = "Health " + playerHealth.Health + " / " + playerHealth.MaximumHealth;
+                if (lastHealth != playerHealth.Health) { lastHealth = playerHealth.Health;
+                    healthLabel.text = "Health " + playerHealth.Health + " / " + playerHealth.MaximumHealth; }
                 healthFill.rectTransform.anchorMax = new Vector2((float)playerHealth.Health / playerHealth.MaximumHealth, 1);
                 defeatPanel.gameObject.SetActive(playerHealth.IsDefeated || (waves != null && waves.Victory));
                 endTitle.text = playerHealth.IsDefeated ? "TRY AGAIN" : "QUEST COMPLETE";
-                summary.text = playerHealth.IsDefeated ? "Your answers and wand upgrades are safe.\nRetry the unfinished wave." : "Three waves cleared | Three answers saved\nWand power " + GetComponent<PrototypeCombat>().Damage + " | Ready for a new adventure?";
+                if (summaryDamage != GetComponent<PrototypeCombat>().Damage || wasDefeated != playerHealth.IsDefeated) {
+                summaryDamage = GetComponent<PrototypeCombat>().Damage; wasDefeated = playerHealth.IsDefeated;
+                summary.text = playerHealth.IsDefeated ? "Your answers and wand upgrades are safe.\nRetry the unfinished wave." : "Three waves cleared | Three answers saved\nWand power " + GetComponent<PrototypeCombat>().Damage + " | Ready for a new adventure?"; }
                 graceLabel.text = playerHealth.GraceActive && CanPlay ? "SHIELD | Safe for a moment" : "";
                 pauseButton.gameObject.SetActive(Started && GameplayEnabled && !ManualPaused);
                 muteLabel.text = PrototypeAudio.Muted ? "Sound: off" : "Sound: on";
                 menuMuteLabel.text = muteLabel.text;
                 if (!Started || ManualPaused) menu.SetAsLastSibling();
                 restartButton.GetComponentInChildren<Text>().text = playerHealth.IsDefeated ? "Retry" : "New Run";
+                var breakTick = waves != null && waves.OnBreak ? Mathf.CeilToInt(waves.BreakRemaining) : -1;
+                if (waves != null && (lastWave != waves.WaveNumber || lastBreak != breakTick)) {
+                lastWave = waves.WaveNumber; lastBreak = breakTick;
                 waveLabel.text = waves == null ? "" : "Wave " + waves.WaveNumber + " / " + waves.WaveCount
-                    + (waves.OnBreak ? " — Next wave in " + Mathf.CeilToInt(waves.BreakRemaining) + "s" : "");
+                    + (waves.OnBreak ? " — Next wave in " + Mathf.CeilToInt(waves.BreakRemaining) + "s" : ""); }
             }
             if (!HasFocus || epoch != PrototypeBrowserInput.Epoch)
             {
@@ -140,6 +152,7 @@ namespace DrForms.Prototype
                 lastPointer = Mouse.current != null ? Mouse.current.position.ReadValue() : Vector2.zero;
                 epoch = PrototypeBrowserInput.Epoch;
             }
+            rewardLabel.gameObject.SetActive(Time.unscaledTime < rewardUntil && Started && GameplayEnabled && !ManualPaused);
             if (lastSafeArea != Screen.safeArea) UpdateSafeArea();
             if (showedAttack == AttackActive) return;
             showedAttack = AttackActive;
@@ -266,8 +279,6 @@ namespace DrForms.Prototype
                 new Vector2(0, -22), new Vector2(-24, 38));
             var panel = hud.gameObject.AddComponent<Image>();
             panel.color = new Color(0.04f, 0.07f, 0.12f, 0.88f);
-            normalInstruction = TouchMode ? "Left thumb: move    Right thumb: attack\nNearest target in range"
-                : "Move the mouse over the floor to move\nLeft click: fire at nearest target in range";
             normalInstruction = TouchMode ? "GARDEN QUEST | Move + tap to cast" : "GARDEN QUEST | Mouse to move | Click to cast";
             instruction = Label("Instructions Text", hud, normalInstruction, 18);
             circle = CreateCircle();
@@ -329,8 +340,12 @@ namespace DrForms.Prototype
             defeatPanel.gameObject.SetActive(false);
         }
 
+        public void NotifyReward(int reward) { rewardLabel.text = "WAND UPGRADED  +" + reward + " power"; rewardUntil = Time.unscaledTime + 2.5f; }
         private void CreateMenu()
         {
+            var reward = Rect("Upgrade Notice", safeArea, new Vector2(.15f,.65f), new Vector2(.85f,.65f), Vector2.zero, new Vector2(0,40));
+            rewardLabel = Label("Wand Upgrade", reward, "", 24); rewardLabel.color = new Color(1,.88f,.42f);
+            rewardLabel.resizeTextForBestFit = true; rewardLabel.resizeTextMinSize = 14; rewardLabel.resizeTextMaxSize = 24;
             var shield = Rect("Grace Status", safeArea, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -151), new Vector2(360, 24));
             graceLabel = Label("Shield", shield, "", 16);
             pauseButton = MenuButton("Pause", safeArea, new Vector2(0, 1), new Vector2(54, -190), new Vector2(96, 44), Pause);
@@ -350,8 +365,8 @@ namespace DrForms.Prototype
             resumeButton = MenuButton("Resume", menu, new Vector2(0.5f, 0.37f), Vector2.zero, new Vector2(230, 58), Resume);
             menuRestartButton = MenuButton("Restart | New Run", menu, new Vector2(0.5f, 0.22f), Vector2.zero, new Vector2(230, 48), () => playerHealth.RestartNewRun());
             resumeButton.gameObject.SetActive(false); menuRestartButton.gameObject.SetActive(false);
-            var sound = MenuButton("Sound: on", menu, new Vector2(0.5f, 0.12f), Vector2.zero, new Vector2(180, 36), () => PrototypeAudio.ToggleMute());
-            menuMuteLabel = sound.GetComponentInChildren<Text>();
+            menuSound = MenuButton("Sound: on", menu, new Vector2(0.5f, 0.12f), Vector2.zero, new Vector2(180, 36), () => PrototypeAudio.ToggleMute());
+            menuMuteLabel = menuSound.GetComponentInChildren<Text>();
             var id = Rect("Build Identifier", menu, new Vector2(0.1f, 0.03f), new Vector2(0.9f, 0.09f), Vector2.zero, Vector2.zero);
             Label("Build", id, BuildId, 12);
         }

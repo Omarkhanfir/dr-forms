@@ -24,7 +24,7 @@ const pass=(name,data)=>{result.checks.push({name,data});console.log('PASS: '+na
   page.on('pageerror',e=>events.push(e.message));
   async function load(){await page.goto(`http://127.0.0.1:${port}/`);await page.waitForFunction(()=>!!window.prototypeInstance,null,{timeout:180000});await page.waitForTimeout(5500);}
   async function state(){let n=states.length;await page.evaluate(()=>window.prototypeInstance.SendMessage('Prototype Player','LogVerificationState'));await page.waitForFunction(()=>true);for(let i=0;i<200&&states.length===n;i++)await page.waitForTimeout(20);assert(states.length>n);return states.at(-1);}
-  async function click(s,p){const box=await page.locator('#unity-canvas').boundingBox(),x=box.x+p.x/s.screenWidth*box.width,y=box.y+(1-p.y/s.screenHeight)*box.height;if(phone)await page.touchscreen.tap(x,y);else await page.mouse.click(x,y);await page.waitForTimeout(180);return state();}
+  async function click(s,p){const box=await page.locator('#unity-canvas').boundingBox(),x=box.x+p.x/s.screenWidth*box.width,y=box.y+(1-p.y/s.screenHeight)*box.height;if(phone)await page.touchscreen.tap(x,y);else await page.mouse.click(x,y,{delay:80});await page.waitForTimeout(180);return state();}
   await load();let s=await state();assert(!s.started&&s.timeScale===0);
   assert(await page.locator('[id*="phone-diag"]').count()===0);
   const layout=await page.locator('#unity-canvas').boundingBox();assert(layout.width=== (phone?390:1280)&&layout.height===(phone?844:900));
@@ -58,6 +58,16 @@ const pass=(name,data)=>{result.checks.push({name,data});console.log('PASS: '+na
    s=await state();await page.screenshot({path:path.join(artifacts,'polish-phone-inset-menu.png')});
    pass('Landscape resize and emulated safe-area padding retain menu/mute state',{box});
   }
+  s=await state();s=await click(s,s.playCenter);assert(s.started&&s.muted);
+  await page.waitForTimeout(350);s=await state();const before=s.shotsFired;
+  s=await click(s,phone?s.attackCenter:s.playerFloorScreen);
+  assert(s.shotsFired===before+1);
+  await page.waitForTimeout(550);assert(await page.evaluate(()=>window.drFormsAudio.tones===0));
+  pass('Muted real attack emits no oscillator tones',{phone});
+  s=await state();s=await click(s,s.pauseCenter);assert(s.manualPaused);
+  s=await click(s,s.menuRestartCenter);await page.waitForTimeout(400);s=await state();
+  assert(s.started&&!s.manualPaused&&s.playerHealth===100&&s.answers.length===0&&s.damage===25&&s.shotsFired===0&&s.muted);
+  pass('Pause-menu Restart reloads a fresh run and keeps mute preference',{phone});
   assert(events.length===0,events.join('\n'));await context.close();
  }
  pass('No browser or Unity errors in supplementary UI checks');

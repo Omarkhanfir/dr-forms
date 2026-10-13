@@ -131,6 +131,12 @@ namespace DrForms.Prototype
             var questions = GetComponent<PrototypeQuestions>();
             Debug.Log("PROTOTYPE_STATE:" + JsonUtility.ToJson(new VerificationState
             {
+                frame = Time.frameCount, realtime = Time.realtimeSinceStartup,
+                menuSoundCenter = controls.MenuSoundCenter, menuRestartCenter = controls.MenuRestartCenter,
+                rangedCount = System.Array.FindAll(FindObjectsByType<PrototypeEnemy>(), e => e.IsRanged && e.GetComponent<PrototypeTarget>().Health > 0).Length,
+                telegraphCount = System.Array.FindAll(FindObjectsByType<PrototypeEnemy>(), e => e.Telegraphing).Length,
+                rangedShots = System.Array.ConvertAll(FindObjectsByType<PrototypeEnemy>(), e => e.RangedShots),
+                enemyBolts = PrototypeEnemyBolt.ActiveCount, projectilePool = combat != null ? combat.PoolSize : 0,
                 started = controls.Started, manualPaused = controls.ManualPaused, muted = PrototypeAudio.Muted,
                 playCenter = controls.PlayCenter, pauseCenter = controls.PauseCenter, muteCenter = controls.MuteCenter, resumeCenter = controls.ResumeCenter,
                 grace = playerHealth != null && playerHealth.GraceActive,
@@ -214,6 +220,10 @@ namespace DrForms.Prototype
         [System.Serializable]
         private struct VerificationState
         {
+            public int frame, rangedCount, telegraphCount, enemyBolts, projectilePool;
+            public int[] rangedShots;
+            public float realtime;
+            public Vector2 menuSoundCenter, menuRestartCenter;
             public bool started, manualPaused, muted, grace;
             public Vector2 playCenter, pauseCenter, muteCenter, resumeCenter;
             public bool applicationFocus, bridgeFocus, gameplayEnabled, canPlay, inputReady, pointerPressed;

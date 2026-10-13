@@ -72,3 +72,20 @@ Start with one game: the Unity 3D action RPG. Design the platform to support add
 
 - **Pricing:** Undecided.
 - **Hosting:** Undecided.
+
+## Garden Quest local polish
+
+The current game uses an original procedural garden fantasy style, an adventurer
+with a growing crystal wand, mushroom chasers, and one slower telegraphed flower
+mage in waves two and three. Counts remain 2/3/4, with three equal-reward questions
+and automatic Submit progression. Damage protection follows Play, Resume,
+question submission and focus recovery. Contact damage is modest and spaced.
+
+Play activates procedural browser audio. Pause/Resume and Restart/New Run are
+separate from question, background and ending pauses. Sound preference persists
+in browser local storage; assessment/run progress is still in memory. Retry
+preserves submitted answers/upgrades. The default preview hides developer
+diagnostics; use `?devDiagnostics=1` explicitly for troubleshooting. The menu
+shows `GARDEN-QUEST-3`. Phone layouts use a safe-area-aware canvas and browser
+insets. Physical iPhone verification of this new polish is pending; the user
+confirmed movement and attack in the preceding SAFARI-FOCUS-2 build.

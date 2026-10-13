@@ -46,16 +46,46 @@ require fresh input before attacking. Hidden touches must not resume; question,
 defeat and Victory pauses must survive recovery, including recovery taps on
 Answer/Retry/New Run controls.
 
-For the temporary diagnostic LAN preview:
+For the Garden Quest LAN preview (diagnostics off by default):
 
 ```powershell
-$env:DRFORMS_PREVIEW_ROOT = 'C:\Users\21654\DrFormsGame-WebVerification\SafariFocusBuild'
+$env:DRFORMS_PREVIEW_ROOT = 'C:\Users\21654\DrFormsGame-WebVerification\GardenFinalPolishBuild'
 node Tests/Browser/wifi-preview.cjs
 ```
 
-This binds to `0.0.0.0:8765`, sets Unity MIME/compression headers and no-store
-caching, and injects the pointer-transparent `phone-diagnostics.js` before the
-loader. The Unity diagnostic snapshot shows build ID `SAFARI-FOCUS-2`; confirm
-that value to distinguish the rebuilt player from a stale page. Set
-`DRFORMS_PREVIEW_PORT` to override the port. Allow private networks only if
-Windows Firewall prompts. Build outputs/logs/screenshots stay outside Git.
+This binds to `0.0.0.0:8765` and shares the responsive browser shell with the
+regression suite. CSS safe-area insets pad the actual canvas; its rendering
+pixel ratio is capped at 1.5. Use `?devDiagnostics=1` only for developer
+troubleshooting. Both the panel and Unity reporter require that explicit URL;
+normal gameplay has no phone diagnostic overlay. The menu shows a small
+`GARDEN-QUEST-3` identifier. Physical notch behavior still requires a device.
+
+Controls: Play starts a run and activates procedural browser audio. Desktop
+mouse movement follows the garden floor; click casts at the nearest target.
+On touch devices use the left joystick and independent right Attack taps.
+Pause opens Resume and Restart / New Run; Restart resets answers/upgrades.
+Sound toggles persist in browser local storage (run progress remains in memory).
+Defeat Retry preserves earlier answers/upgrades and restarts only the unfinished
+wave. Victory New Run resets everything. Selecting an answer never submits it;
+Submit Answer grants one equal reward and resumes automatically. A lost-focus
+Safari recovery touch is consumed first; release, then use a fresh gesture.
+A short visible shield protects Play/Resume/question/focus recovery.
+
+Supplementary actual-browser UI/audio/layout checks:
+
+```powershell
+$env:DRFORMS_FLOW_BUILD_PATH = 'C:\Users\21654\DrFormsGame-WebVerification\GardenFinalPolishBuild'
+node Tests/Browser/polish-ui.cjs
+node Tests/Browser/audio-bridge.cjs
+```
+
+The UI suite uses loopback 8767, actual tab switching and real Web Audio context
+observations, mute/reload persistence, portrait/landscape and explicitly emulated
+safe-area padding. Audio-bridge tests use simulated audio nodes, including
+Safari's interrupted state; they do not prove audibility on a physical phone.
+The complete flow suite uses the development-only `?longQuestions=1` fixture
+for its portrait/landscape phone session and observes live ranged telegraphs,
+projectile/effect caps and Unity frame counters. Its performance figures are
+headless Chrome/SwiftShader measurements with automation overhead, not iPhone
+or hardware GPU performance. Build output, screenshots, logs and results remain
+outside Git. Do not serve a directory while Unity is rebuilding it.

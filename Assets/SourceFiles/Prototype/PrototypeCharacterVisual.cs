@@ -11,6 +11,7 @@ namespace DrForms.Prototype
         private PrototypeCombat combat;
         private PrototypePlayerHealth player;
         private PrototypeTarget target;
+        private Renderer gemRenderer;
         private Vector3 previous;
         private float phase, diedAt = -1;
         public static Material Paint(int key)
@@ -44,6 +45,7 @@ namespace DrForms.Prototype
             else if (GetComponent<PrototypeEnemy>() != null && GetComponent<PrototypeEnemy>().IsRanged) FlowerMage();
             else if (GetComponent<PrototypeEnemy>() != null) Mushroom();
             else TrainingTotem();
+            if(gem!=null) gemRenderer=gem.GetComponent<Renderer>();
             previous = transform.position;
         }
         private void Adventurer()
@@ -109,14 +111,15 @@ namespace DrForms.Prototype
             var delta=transform.position-previous; delta.y=0; previous=transform.position;
             if(Time.timeScale<=0) return;
             bool moving=delta.sqrMagnitude>.00001f;
-            if(moving) rig.rotation=Quaternion.Slerp(rig.rotation,Quaternion.LookRotation(delta),Time.deltaTime*14);
+            if(combat!=null && combat.MuzzleActive) rig.rotation=Quaternion.Slerp(rig.rotation,Quaternion.LookRotation(combat.AimDirection),Time.deltaTime*20);
+            else if(moving) rig.rotation=Quaternion.Slerp(rig.rotation,Quaternion.LookRotation(delta),Time.deltaTime*14);
             phase+=Time.deltaTime*(moving?12:2);
             float recoil=combat!=null && combat.MuzzleActive ? .16f : target!=null && target.HitFlashActive ? -.12f : 0;
             rig.localPosition=Vector3.down+Vector3.up*(Mathf.Sin(phase)*(moving?.055f:.015f)+recoil);
             rig.localScale=new Vector3(1, recoil<0?.86f:1,1);
             if(leftLeg!=null) {leftLeg.localRotation=Quaternion.Euler(moving?Mathf.Sin(phase)*24:0,0,0);rightLeg.localRotation=Quaternion.Euler(moving?-Mathf.Sin(phase)*24:0,0,0);}
             if(weapon!=null) weapon.localRotation=Quaternion.Euler(recoil>0?-22:0,0,-8);
-            if(gem!=null) { int level=Mathf.Clamp((combat.Damage-25)/10,0,3); gem.GetComponent<Renderer>().sharedMaterial=Paint(level>=2?8:7);gem.localScale=new Vector3(3+level*.65f,.4f+level*.12f,3+level*.65f); }
+            if(gem!=null) { int level=Mathf.Clamp((combat.Damage-25)/10,0,3); gemRenderer.sharedMaterial=Paint(level>=2?8:7);gem.localScale=new Vector3(3+level*.65f,.4f+level*.12f,3+level*.65f); }
             if(shield!=null) shield.gameObject.SetActive(player.GraceActive);
         }
     }

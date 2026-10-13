@@ -1,5 +1,5 @@
 // Static preview handler adapted from Tests/Browser/reliable-flow.cjs.
-// Temporary phone diagnostic script is injected before Unity's loader.
+// Developer diagnostics are injected only for ?devDiagnostics=1.
 const http = require('http'), fs = require('fs'), path = require('path');
 if (!process.env.DRFORMS_PREVIEW_ROOT || !path.isAbsolute(process.env.DRFORMS_PREVIEW_ROOT))
   throw new Error('Set DRFORMS_PREVIEW_ROOT to an absolute external Web build directory');

@@ -52,7 +52,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
       page.on('pageerror', error => target.events.push({ type: 'pageerror', text: error.message }));
       page.on('requestfailed', req => target.events.push({ type: 'requestfailed', url: req.url() }));
       page.on('response', res => { if (res.status() >= 400) target.events.push({ type: 'http-error', url: res.url(), status: res.status() }); });
-      await page.goto(`http://127.0.0.1:${port}`, { waitUntil: 'domcontentloaded' });
+      await page.goto(`http://127.0.0.1:${port}${phone ? "/?longQuestions=1" : "/"}`, { waitUntil: 'domcontentloaded' });
       await page.waitForFunction(() => !!window.prototypeInstance, null, { timeout: 180000 });
       await page.waitForTimeout(5500);
       const snapshot = async () => {
@@ -111,6 +111,8 @@ function passed(name, details) { result.checks.push({ name, details }); console.
       const muted=s.muted; await act(s.muteCenter); assert(s.muted!==muted);
       await page.waitForTimeout(600); await act(s.muteCenter); assert(s.muted===muted);
       passed('Manual Pause freezes its own clock; Resume consumes input and adds grace; mute toggles');
+      assert(await page.evaluate(()=>window.drFormsAudio.context.state==='running'));
+      passed('Real browser Web Audio remains running after Play and mute toggles');
       target.initial = s;
       return { page, context, snapshot, client, target };
     }
@@ -131,7 +133,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
       return {x:s.screenWidth/2+dot(r)*focal/depth,y:s.screenHeight/2+dot(u)*focal/depth};
     };
     const option=async(t,s,index)=>{
-      for(let i=0;i<6;i++){
+      for(let i=0;i<18;i++){
         const p=s.answerCenters[index];
         if(p.y>s.screenHeight*.27 && p.y<s.screenHeight*.92) return s;
         const start=await t.client(s,{x:s.screenWidth*.75,y:s.screenHeight*.45});
@@ -195,11 +197,20 @@ function passed(name, details) { result.checks.push({ name, details }); console.
     async function clearWave(t,holdOnFinal=false,retries=0){
       let s=await t.snapshot(),lastClick=-1,held=false,heldAt=0,lastAlive=s;
       const initialShots=s.shotsFired,initialMoving=s.movingSeconds;
+      assert(s.rangedCount === (s.wave>=2 ? 1 : 0), 'Introduce one mage only after wave one');
+      let observedTelegraph=false, observedRangedShot=false;
       // Continue around the perimeter after answering instead of resetting the
       // goal across the arena and running through a random chaser cluster.
       let angle=Math.hypot(s.position.x,s.position.z)>1?Math.atan2(s.position.z,s.position.x)+Math.PI/6:0;
       const end=Date.now()+100000;
       while(!s.questionPaused && !s.defeated && Date.now()<end){
+        observedTelegraph ||= s.telegraphCount>0;
+        if(s.telegraphCount>0 && !t.target.telegraphScreenshot) {
+          t.target.telegraphScreenshot=true;
+          await t.page.screenshot({path:path.join(artifacts, `polish-${t.target.touch?t.target.phone?'phone':'tablet':'desktop'}-ranged-telegraph.png`)});
+        }
+        observedRangedShot ||= s.rangedShots.some(n=>n>0);
+        assert(s.projectiles<=8 && s.projectilePool<=8 && s.effects<=24 && s.enemyBolts<=4);
         let goal={x:6*Math.cos(angle),z:6*Math.sin(angle)};
         if(dist(s.position,goal)<1.2){angle+=Math.PI/6;goal={x:6*Math.cos(angle),z:6*Math.sin(angle)};}
         if(t.target.touch){
@@ -251,6 +262,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
         passed('Ordinary touch Retry after active-combat defeat preserves answers/rewards and restores only the unfinished wave', {phone:t.target.phone,wave});
         return clearWave(t,holdOnFinal,retries+1);
       }
+      if(observedTelegraph && observedRangedShot) passed('Flower mage windup and slow ranged shot observed during actual combat', {wave:s.wave,phone:t.target.phone});
       assert(!s.defeated,'Defeated while clearing wave');assert(s.questionPaused,'No question after clear');
       assert(s.answers.length===s.wave-1 && !s.victory && !s.onBreak);
       if(t.target.touch){ // joystick touch survives into UI until explicitly released
@@ -394,6 +406,23 @@ function passed(name, details) { result.checks.push({ name, details }); console.
       passed('Complete emulated touch run and responsive guarded Submit controls', {phone});
       await t.context.close();
     }
+    // Measured Unity frames across consecutive active-combat snapshots. Software
+    // rendering + automation overhead; never an iPhone performance claim.
+    result.performance = result.sessions.map(target=>{
+      const windows=[];
+      for(let i=1;i<target.states.length;i++) {
+        const a=target.states[i-1],b=target.states[i],dt=b.realtime-a.realtime;
+        if(a.canPlay&&b.canPlay&&a.wave===b.wave&&!a.onBreak&&!b.onBreak&&dt>=.08&&dt<=1.5&&b.frame>a.frame)
+          windows.push((b.frame-a.frame)/dt);
+      }
+      windows.sort((a,b)=>a-b);
+      return {touch:target.touch,phone:target.phone,samples:windows.length,
+        medianUnityFps:windows[Math.floor(windows.length/2)],p10UnityFps:windows[Math.floor(windows.length*.1)]};
+    });
+    assert(result.sessions.some(t=>t.states.some(s=>s.telegraphCount>0 && s.rangedCount===1)),'No live mage telegraph observed');
+    assert(result.sessions.some(t=>t.states.some(s=>s.rangedShots.some(n=>n>0))),'No live ranged attack observed');
+    passed('Gradual single ranged enemy, real windup and ranged attacks observed across completed runs');
+    result.environment = {browser:browser.version(),renderer:'Windows installed Chrome headless / SwiftShader; deviceScaleFactor 1; automated mouse and emulated touch'};
     for(const target of result.sessions)assert(!target.events.some(e=>['error','pageerror','requestfailed','http-error'].includes(e.type)),JSON.stringify(target.events));
     passed('No browser errors, page exceptions, or failed requests');
   }catch(error){result.error=error.stack;console.error(error);process.exitCode=1;}

@@ -53,6 +53,7 @@ namespace DrForms.Prototype
                 Time.timeScale = 0;
                 controls.SetGameplayEnabled(false);
                 foreach (var projectile in FindObjectsByType<PrototypeProjectile>()) projectile.Cancel();
+                PrototypeEnemyBolt.Clear();
                 return;
             }
             OnBreak = true;
@@ -106,10 +107,12 @@ namespace DrForms.Prototype
             if (positions.Count != count) return;
             LastSpawns = positions.ToArray();
             SpawnPlayerPosition = player.transform.position;
-            foreach (var position in positions)
+            for (var spawnIndex = 0; spawnIndex < positions.Count; spawnIndex++)
             {
-                var enemy = Instantiate(enemyTemplate, position, Quaternion.identity);
-                enemy.name = "Wave " + (WaveNumber + 1) + " Chaser";
+                var enemy = Instantiate(enemyTemplate, positions[spawnIndex], Quaternion.identity);
+                var ranged = WaveNumber >= 1 && spawnIndex == positions.Count - 1;
+                enemy.ConfigureForWave(ranged);
+                enemy.name = "Wave " + (WaveNumber + 1) + (ranged ? " Flower Mage" : " Mossling");
                 enemy.gameObject.SetActive(true);
                 living.Add(enemy.GetComponent<PrototypeTarget>());
             }

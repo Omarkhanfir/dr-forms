@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace DrForms.Prototype
 {
@@ -10,6 +11,11 @@ namespace DrForms.Prototype
         [SerializeField, Min(0)] private float cooldown = 0.25f;
         [SerializeField, Min(0.1f)] private float projectileSpeed = 10;
         private float nextAttack;
+        private readonly Queue<PrototypeProjectile> available = new Queue<PrototypeProjectile>();
+        private GameObject projectileRoot;
+        public Vector3 AimDirection { get; private set; }
+        public int PoolSize { get; private set; }
+        private void OnDestroy() { if (projectileRoot != null) Destroy(projectileRoot); }
         public int ShotsFired { get; private set; }
         public int ActiveProjectiles { get; private set; }
         public int Damage => damage;
@@ -27,10 +33,10 @@ namespace DrForms.Prototype
             var health = GetComponent<PrototypePlayerHealth>();
             if (health != null && health.IsDefeated) return false;
             if (!GetComponent<PrototypeControls>().CanPlay) return false;
-            if (Time.time < nextAttack) return false;
+            if (Time.time < nextAttack || ActiveProjectiles >= 8) return false;
             PrototypeTarget nearest = null;
             var nearestDistance = range * range;
-            foreach (var target in FindObjectsByType<PrototypeTarget>())
+            foreach (var target in PrototypeTarget.Active)
             {
                 if (target.Health <= 0) continue;
                 var distance = (target.transform.position - transform.position).sqrMagnitude;
@@ -45,19 +51,26 @@ namespace DrForms.Prototype
             ShotsFired++;
             PrototypeAudio.Play(0);
             ActiveProjectiles++;
-            var shot = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            shot.name = "Prototype Projectile";
-            var direction = (nearest.transform.position - transform.position).normalized;
-            var muzzle = transform.position + direction * 0.65f;
+            if (projectileRoot == null) projectileRoot = new GameObject("Wand Projectile Pool");
+            PrototypeProjectile projectile;
+            if (available.Count > 0) projectile = available.Dequeue();
+            else {
+                var obj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                obj.name = "Wand Bolt"; obj.transform.SetParent(projectileRoot.transform);
+                var collision = obj.GetComponent<Collider>(); collision.enabled = false; Destroy(collision);
+                obj.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                projectile = obj.AddComponent<PrototypeProjectile>(); PoolSize++;
+            }
+            var shot = projectile.gameObject;
+            AimDirection = (nearest.transform.position - transform.position).normalized;
+            var muzzle = transform.position + AimDirection * .65f;
             shot.transform.position = muzzle;
-            shot.transform.localScale = Vector3.one * 0.25f;
-            var collider = shot.GetComponent<Collider>();
-            collider.enabled = false;
-            Destroy(collider);
-            shot.GetComponent<Renderer>().sharedMaterial = GetComponent<Renderer>().sharedMaterial;
-            PrototypeCombatEffect.Spawn(muzzle, GetComponent<Renderer>().sharedMaterial,
-                new Color(1, 0.95f, 0.45f), 0.45f, 0.09f, "Muzzle Flash");
-            shot.AddComponent<PrototypeProjectile>().Initialize(this, nearest, damage, projectileSpeed);
+            shot.transform.localScale = Vector3.one * (.34f + Mathf.Clamp(damage-25,0,30)*.004f);
+            var material = PrototypeCharacterVisual.Paint(damage >= 45 ? 8 : 7);
+            shot.GetComponent<Renderer>().sharedMaterial = material;
+            shot.SetActive(true);
+            projectile.Initialize(this, nearest, damage, projectileSpeed);
+            PrototypeCombatEffect.Spawn(muzzle, material, new Color(1,.95f,.55f), .4f, .09f, "Wand Spark");
             return true;
         }
 
@@ -65,6 +78,10 @@ namespace DrForms.Prototype
 
         internal void HitApplied() => HitsApplied++;
 
-        internal void ProjectileFinished() => ActiveProjectiles--;
+        internal void ReturnProjectile(PrototypeProjectile projectile)
+        {
+            ActiveProjectiles = Mathf.Max(0, ActiveProjectiles - 1);
+            projectile.gameObject.SetActive(false); available.Enqueue(projectile);
+        }
     }
 }
