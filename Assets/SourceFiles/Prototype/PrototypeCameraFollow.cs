@@ -5,7 +5,7 @@ namespace DrForms.Prototype
     public sealed class PrototypeCameraFollow : MonoBehaviour
     {
         [SerializeField] private Transform target;
-        [SerializeField] private Vector3 offset = new Vector3(0, 17, -6);
+        [SerializeField] private Vector3 offset = new Vector3(0, 14, -8);
         [SerializeField, Min(0.01f)] private float smoothTime = 0.2f;
         private Vector3 velocity;
 

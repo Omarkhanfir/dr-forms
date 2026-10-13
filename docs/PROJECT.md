@@ -87,7 +87,7 @@ separate from question, background and ending pauses. Sound preference persists
 in browser local storage; assessment/run progress is still in memory. Retry
 preserves submitted answers/upgrades. The default preview hides developer
 diagnostics; use `?devDiagnostics=1` explicitly for troubleshooting. The menu
-shows `GARDEN-QUEST-4`. Phone layouts use a safe-area-aware canvas and browser
+shows `COURTYARD-ART-1`. Phone layouts use a safe-area-aware canvas and browser
 insets. Physical iPhone verification of this new polish is pending; the user
 confirmed movement and attack in the preceding SAFARI-FOCUS-2 build.
 
@@ -99,3 +99,16 @@ characters without real-time shadow maps. Articulated arms/boots, facing/cast/hi
 defeat motion, bounded movement dust/impact sparks and up to twelve short damage
 numbers remain original procedural art, with no purchased/downloaded assets.
 This improves the prototype; it does not provide commercial character art.
+
+
+## Representative room art
+
+The first dungeon room is the Mosslight Courtyard visual showcase. It combines
+original Blender-authored stonework, paving, arch/gate and perimeter vegetation
+with licensed CC0 KayKit knight/Guardian/Acolyte models and real skeletal clips.
+Source and licence records are in [ART_SOURCES.md](ART_SOURCES.md). A single
+1024 directional shadow map, warm/cool lighting, soft contacts, bounded luminous
+spell effects and smaller framed touch/HUD elements replace the prior primitive
+characters and flat unshaded room. Later room environments remain simpler;
+all three encounters, question/reward transactions and Safari controls remain.
+This is a local art review milestone, not a hosting or pricing decision.

@@ -48,8 +48,8 @@ namespace DrForms.Prototype
                 var text=new GameObject("Amount",typeof(RectTransform),typeof(Text));text.transform.SetParent(obj.transform,false);
                 text.GetComponent<RectTransform>().sizeDelta=new Vector2(100,50);
                 number.label=text.GetComponent<Text>();number.label.font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                number.label.fontSize=32;number.label.fontStyle=FontStyle.Bold;number.label.alignment=TextAnchor.MiddleCenter;number.label.raycastTarget=false;
-                obj.transform.localScale=Vector3.one*.018f;
+                number.label.fontSize=28;number.label.fontStyle=FontStyle.Bold;number.label.alignment=TextAnchor.MiddleCenter;number.label.raycastTarget=false;
+                obj.transform.localScale=Vector3.one*.016f;
             }
             number.origin=position;number.transform.position=position;number.label.text="-"+amount;
             number.started=Time.time;number.counted=true;active++;number.gameObject.SetActive(true);

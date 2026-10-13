@@ -66,7 +66,7 @@ namespace DrForms.Prototype
             var muzzle = transform.position + AimDirection * .65f;
             shot.transform.position = muzzle;
             shot.transform.localScale = Vector3.one * (.34f + Mathf.Clamp(damage-25,0,30)*.004f);
-            var material = PrototypeCharacterVisual.Paint(damage >= 45 ? 8 : 7);
+            var material = CourtyardArt.GlowMaterial;
             shot.GetComponent<Renderer>().sharedMaterial = material;
             shot.SetActive(true);
             projectile.Initialize(this, nearest, damage, projectileSpeed);

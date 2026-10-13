@@ -17,6 +17,7 @@ namespace DrForms.Prototype
         private Vector3 lockedAim;
         private LineRenderer warning;
         public bool IsRanged {get;private set;}
+        public bool MageAppearance { get; private set; }
         public bool Telegraphing => windupUntil>0;
         public Vector3 LockedAim => lockedAim;
         public int RangedShots {get;private set;}
@@ -33,14 +34,15 @@ namespace DrForms.Prototype
             if(player==null)player=FindAnyObjectByType<PrototypePlayerHealth>();
             if(player!=null)controls=player.GetComponent<PrototypeControls>();
         }
-        public void ConfigureForWave(bool ranged)
+        public void ConfigureForWave(bool ranged, bool mageAppearance = false)
         {
             health=GetComponent<PrototypeTarget>();
             roomIndex = Mathf.RoundToInt(transform.position.z / 24);
+            MageAppearance = ranged || mageAppearance;
             IsRanged=ranged;speed=ranged?1.1f:Mathf.Min(speed,1.8f);
             contactDamage=Mathf.Min(contactDamage,10);contactCooldown=Mathf.Max(contactCooldown,1.5f);
             nextCast=Time.time+3.5f;
-            health.SetDisplayName(ranged?"Flower mage":"Mossling");
+            health.SetDisplayName(MageAppearance ? "Acolyte" : "Guardian");
             if(!ranged)return;
             var obj=new GameObject("Amber Aim Warning");obj.transform.SetParent(transform,false);
             warning=obj.AddComponent<LineRenderer>();warning.useWorldSpace=true;warning.positionCount=2;

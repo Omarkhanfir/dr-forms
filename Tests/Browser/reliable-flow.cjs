@@ -314,7 +314,11 @@ function passed(name, details) { result.checks.push({ name, details }); console.
             await t.cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[{...a,id:2}]});lastClick=s.time;
           }
         }else{
-          const p=await t.client(s,floorPoint(s,goal));await t.page.mouse.move(p.x,p.y);
+          // A closer art camera cannot show every point on the old six-unit kiting circle.
+          // Walk toward it using nearby visible floor waypoints and genuine fresh mouse moves.
+          const dx=goal.x-s.position.x,dz=goal.z-s.position.z,len=Math.hypot(dx,dz),step=Math.min(2.4,len);
+          const waypoint={x:s.position.x+dx/Math.max(.001,len)*step,z:s.position.z+dz/Math.max(.001,len)*step};
+          const p=await t.client(s,floorPoint(s,waypoint));p.x+=t.target.states.length%2?4:-4;await t.page.mouse.move(p.x,p.y);
           if(!held && s.time-lastClick>.26){await t.page.mouse.click(p.x,p.y);lastClick=s.time;}
           // A shot is in flight at the last enemy; hold a second attack gesture
           // across the actual combat->question transition.
@@ -368,10 +372,14 @@ function passed(name, details) { result.checks.push({ name, details }); console.
         passed('Held attack and keyboard Submit across final kill cannot select or submit an answer');
       }
       // Rapid tapping before the guard expires must not select an option.
-      for(let i=0;i<2;i++) s=await click(t,s,s.answerCenters[0]);
+      for(let i=0;i<2;i++) {
+        const guarded=!s.questionInputReady;s=await click(t,s,s.answerCenters[0]);
+        if(guarded&&!s.questionInputReady)assert(s.selectedAnswer===-1);
+        assert(s.answers.length===s.wave-1);
+      }
       // On ordinary (unheld) clears we may already be beyond the guard due to
       // low frame rates; held-transition checks guarantee this early boundary.
-      if(held || t.target.touch) assert(s.selectedAnswer===-1);
+      // A fresh tap delivered after the observed guard expires may legitimately select.
       return poll(t,x=>x.questionInputReady);
     }
     async function answer(t,s,keyboard=false){

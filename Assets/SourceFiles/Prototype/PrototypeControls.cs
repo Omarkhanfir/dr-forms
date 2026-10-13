@@ -14,7 +14,7 @@ namespace DrForms.Prototype
         public bool GameplayEnabled { get; private set; } = true;
         public bool InputReady => HasFocus && epoch == PrototypeBrowserInput.Epoch
             && !waitingForRelease && Time.frameCount > inputResumeFrame;
-        public const string BuildId = "DUNGEON-ROUTE-1";
+        public const string BuildId = "COURTYARD-ART-1";
         public bool Started { get; private set; }
         public bool ManualPaused { get; private set; }
         public bool CanPlay => GameplayEnabled && Started && !ManualPaused && InputReady;
@@ -155,7 +155,7 @@ namespace DrForms.Prototype
             if (lastSafeArea != Screen.safeArea) UpdateSafeArea();
             if (showedAttack == AttackActive) return;
             showedAttack = AttackActive;
-            instruction.text = showedAttack ? "FIRED\n" + normalInstruction : normalInstruction;
+            instruction.text = normalInstruction;
             instruction.color = showedAttack ? new Color(1, 0.9f, 0.2f) : Color.white;
         }
 
@@ -277,30 +277,30 @@ namespace DrForms.Prototype
             hud = Rect("Instructions", safeArea, new Vector2(0, 1), new Vector2(1, 1),
                 new Vector2(0, -18), new Vector2(-24, 28));
             var panel = hud.gameObject.AddComponent<Image>();
-            panel.color = new Color(0.04f, 0.07f, 0.12f, 0.88f);
-            normalInstruction = TouchMode ? "GARDEN QUEST | Move + tap to cast" : "GARDEN QUEST | Mouse to move | Click to cast";
+            panel.sprite = CourtyardArt.Panel; panel.type = Image.Type.Sliced; panel.color = new Color(1,1,1,.70f);
+            normalInstruction = TouchMode ? "MOSSLIGHT | Move + cast" : "MOSSLIGHT COURTYARD | Mouse to move | Click to cast";
             instruction = Label("Instructions Text", hud, normalInstruction, 14);
             circle = CreateCircle();
             var pad = Rect("Left Thumb Joystick", safeArea, Vector2.zero, Vector2.zero,
-                new Vector2(120, 120), new Vector2(164, 164));
+                new Vector2(104, 104), new Vector2(136, 136));
             var padImage = pad.gameObject.AddComponent<Image>();
-            padImage.sprite = circle;
-            padImage.color = new Color(0.08f, 0.2f, 0.3f, 0.38f);
+            padImage.sprite = CourtyardArt.Touch;
+            padImage.color = Color.white;
             var knob = Rect("Joystick Knob", pad, Vector2.one * 0.5f, Vector2.one * 0.5f,
-                Vector2.zero, new Vector2(64, 64));
+                Vector2.zero, new Vector2(48, 48));
             var knobImage = knob.gameObject.AddComponent<Image>();
             knobImage.sprite = circle;
-            knobImage.color = new Color(0.2f, 0.85f, 0.9f);
+            knobImage.color = new Color(.68f,.82f,.68f,.75f);
             knobImage.raycastTarget = false;
             joystick = pad.gameObject.AddComponent<PrototypeJoystick>();
             joystick.Owner = this;
             joystick.Knob = knob;
             attackButton = Rect("Right Thumb Attack", safeArea, new Vector2(1, 0), new Vector2(1, 0),
-                new Vector2(-115, 115), new Vector2(136, 136));
+                new Vector2(-102, 104), new Vector2(118, 118));
             var attackImage = attackButton.gameObject.AddComponent<Image>();
-            attackImage.sprite = circle;
-            attackImage.color = new Color(0.10f, 0.36f, 0.38f, 0.62f);
-            Label("Attack Label", attackButton, "ATTACK", 22);
+            attackImage.sprite = CourtyardArt.Touch;
+            attackImage.color = Color.white;
+            Label("Attack Label", attackButton, "CAST", 20);
             attackButton.gameObject.AddComponent<PrototypeAttackButton>().Owner = this;
             pad.gameObject.SetActive(TouchMode);
             attackButton.gameObject.SetActive(TouchMode);
@@ -310,15 +310,16 @@ namespace DrForms.Prototype
         private void CreateHealthAndDefeatUI()
         {
             var healthBar = Rect("Player Health", safeArea, new Vector2(0.5f, 1), new Vector2(0.5f, 1),
-                new Vector2(0, -62), new Vector2(230, 23));
+                new Vector2(0, -62), new Vector2(212, 23));
             healthBar.gameObject.AddComponent<Image>().color = new Color(0.15f, 0.05f, 0.07f, 0.95f);
             var fillRect = Rect("Player Health Fill", healthBar, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             healthFill = fillRect.gameObject.AddComponent<Image>();
-            healthFill.color = new Color(0.15f, 0.6f, 0.3f);
+            healthFill.color = new Color(.32f,.68f,.52f);
             healthFill.raycastTarget = false;
-            healthLabel = Label("Player Health Text", healthBar, "Health", 16);
+            healthLabel = Label("Player Health Text", healthBar, "Health", 14);
             var waveBar = Rect("Wave Status", safeArea, new Vector2(0, 1), new Vector2(0, 1),
                 new Vector2(95, -115), new Vector2(170, 44));
+            var roomBack = waveBar.gameObject.AddComponent<Image>(); roomBack.sprite = CourtyardArt.Panel; roomBack.type = Image.Type.Sliced; roomBack.color = new Color(1,1,1,.88f); roomBack.raycastTarget = false;
             waveLabel = Label("Wave Text", waveBar, "Room 1 / 3", 16);
 
             defeatPanel = Rect("Defeat Screen", safeArea, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
@@ -351,14 +352,14 @@ namespace DrForms.Prototype
             muteButton = MenuButton("Sound: on", safeArea, new Vector2(1, 1), new Vector2(-52, -61), new Vector2(90, 36), () => PrototypeAudio.ToggleMute());
             muteLabel = muteButton.GetComponentInChildren<Text>();
             menu = Rect("Adventure Menu", safeArea, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-            menu.gameObject.AddComponent<Image>().color = new Color(0.035f, 0.12f, 0.16f, 1f);
+            menu.gameObject.AddComponent<Image>().color = new Color(.045f,.09f,.11f,1f);
             var accent = Rect("Sunwood Crest", menu, new Vector2(0.42f, 0.90f), new Vector2(0.58f, 0.94f), Vector2.zero, Vector2.zero);
             accent.gameObject.AddComponent<Image>().color = new Color(.95f,.75f,.3f);
             var heading = Rect("Menu Heading", menu, new Vector2(0.08f, 0.71f), new Vector2(0.92f, 0.92f), Vector2.zero, Vector2.zero);
-            var title = Label("Garden Quest", heading, "GARDEN QUEST\nA little adventure in learning", 32);
+            var title = Label("Garden Quest", heading, "MOSSLIGHT COURTYARD\nAn adventure in learning", 32);
             title.resizeTextForBestFit = true; title.resizeTextMinSize = 20; title.resizeTextMaxSize = 32;
             var help = Rect("Menu Help", menu, new Vector2(0.08f, 0.47f), new Vector2(0.92f, 0.70f), Vector2.zero, Vector2.zero);
-            var text = Label("Controls", help, (TouchMode ? "Left thumb: move\nRight thumb: tap Attack to cast" : "Move your mouse over the garden to walk\nClick to cast at the nearest creature") + "\nThree easy waves. Choose an answer, then Submit.", 21);
+            var text = Label("Controls", help, (TouchMode ? "Left thumb: move\nRight thumb: tap Attack to cast" : "Move your mouse over the garden to walk\nClick to cast at the nearest creature") + "\nThree rooms. Submit your answer, then walk through the open exit.", 21);
             text.resizeTextForBestFit = true; text.resizeTextMinSize = 14; text.resizeTextMaxSize = 21;
             playButton = MenuButton("Play", menu, new Vector2(0.5f, 0.37f), Vector2.zero, new Vector2(230, 58), Begin);
             resumeButton = MenuButton("Resume", menu, new Vector2(0.5f, 0.37f), Vector2.zero, new Vector2(230, 58), Resume);
@@ -373,7 +374,7 @@ namespace DrForms.Prototype
         private RectTransform MenuButton(string title, Transform parent, Vector2 anchor, Vector2 position, Vector2 size, UnityEngine.Events.UnityAction action)
         {
             var rect = Rect(title, parent, anchor, anchor, position, size);
-            var image = rect.gameObject.AddComponent<Image>(); image.color = new Color(0.12f, 0.48f, 0.42f);
+            var image = rect.gameObject.AddComponent<Image>(); image.sprite = CourtyardArt.Panel; image.type = Image.Type.Sliced; image.color = Color.white;
             Label(title + " Text", rect, title, 18);
             var button = rect.gameObject.AddComponent<PrototypeRestartButton>(); button.Owner = this; button.targetGraphic = image;
             button.onClick.AddListener(action);

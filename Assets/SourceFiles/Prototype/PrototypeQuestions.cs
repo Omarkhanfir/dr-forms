@@ -76,6 +76,7 @@ namespace DrForms.Prototype
                 }
             var root = controls.UIRoot;
             var status = PrototypeControls.Rect("Question Progress", root, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-95, -105), new Vector2(180, 24));
+            var progressBack = status.gameObject.AddComponent<Image>(); progressBack.sprite = CourtyardArt.Panel; progressBack.type = Image.Type.Sliced; progressBack.color = new Color(1,1,1,.88f); progressBack.raycastTarget = false;
             progress = PrototypeControls.Label("Question Progress Text", status, "", 14);
             progress.resizeTextForBestFit = true; progress.resizeTextMinSize = 10; progress.resizeTextMaxSize = 14;
             panel = PrototypeControls.Rect("Question Screen", root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);

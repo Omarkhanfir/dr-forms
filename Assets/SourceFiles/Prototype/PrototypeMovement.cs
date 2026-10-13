@@ -132,6 +132,10 @@ namespace DrForms.Prototype
             Debug.Log("PROTOTYPE_STATE:" + JsonUtility.ToJson(new VerificationState
             {
                 frame = Time.frameCount, realtime = Time.realtimeSinceStartup,
+                artShadowResolution = CourtyardArt.ShadowResolution,
+                artAnimation = GetComponent<CourtyardActor>() != null ? GetComponent<CourtyardActor>().CurrentAnimation : "",
+                artClipTime = GetComponent<CourtyardActor>() != null ? GetComponent<CourtyardActor>().ClipTime : 0,
+                artSkinnedParts = GetComponent<CourtyardActor>() != null ? GetComponent<CourtyardActor>().SkinnedParts : 0,
                 menuSoundCenter = controls.MenuSoundCenter, menuRestartCenter = controls.MenuRestartCenter,
                 rangedCount = System.Array.FindAll(FindObjectsByType<PrototypeEnemy>(), e => e.IsRanged && e.GetComponent<PrototypeTarget>().Health > 0).Length,
                 telegraphCount = System.Array.FindAll(FindObjectsByType<PrototypeEnemy>(), e => e.Telegraphing).Length,
@@ -225,6 +229,9 @@ namespace DrForms.Prototype
         [System.Serializable]
         private struct VerificationState
         {
+            public string artAnimation;
+            public float artClipTime;
+            public int artSkinnedParts, artShadowResolution;
             public int frame, rangedCount, telegraphCount, enemyBolts, projectilePool;
             public int[] rangedShots;
             public float realtime;

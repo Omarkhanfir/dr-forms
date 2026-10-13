@@ -829,7 +829,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DrForms.Prototype.PrototypeCameraFollow
   target: {fileID: 223351215}
-  offset: {x: 0, y: 17, z: -6}
+  offset: {x: 0, y: 14, z: -8}
   smoothTime: 0.2
 --- !u!114 &686893775
 MonoBehaviour:

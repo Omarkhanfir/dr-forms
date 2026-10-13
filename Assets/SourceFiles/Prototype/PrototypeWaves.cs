@@ -96,6 +96,7 @@ namespace DrForms.Prototype
             controller.enabled = false;
             transform.position = new Vector3(0, 1, RoomCenter(currentRoom) - (currentRoom == 0 ? 0 : 7));
             controller.enabled = true;
+            CourtyardArt.BuildRoom(route.transform, doors[0]);
             Camera.main.GetComponent<PrototypeCameraFollow>().ResetComposition();
         }
 
@@ -179,7 +180,7 @@ namespace DrForms.Prototype
             {
                 var enemy = Instantiate(enemyTemplate, positions[spawnIndex], Quaternion.identity);
                 var ranged = WaveNumber >= 1 && spawnIndex == positions.Count - 1;
-                enemy.ConfigureForWave(ranged);
+                enemy.ConfigureForWave(ranged, spawnIndex == positions.Count - 1);
                 enemy.name = "Wave " + (WaveNumber + 1) + (ranged ? " Flower Mage" : " Mossling");
                 enemy.gameObject.SetActive(true);
                 living.Add(enemy.GetComponent<PrototypeTarget>());

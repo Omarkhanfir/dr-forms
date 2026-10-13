@@ -1,0 +1,86 @@
+[
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Acolyte.fbx",
+    "bytes": 22295116,
+    "sha256": "a5b6a9e9c690b2c23f52aa7a18aef411b56e9c660229c7e2d0f217f78752573c",
+    "licence": "KayKit CC0"
+  },
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/EnemyAtlas.png",
+    "bytes": 17037,
+    "sha256": "15741a25c53e04fa9bf3beac3bc0de442359404b1ff9be863b892cb551ad3657",
+    "licence": "KayKit CC0"
+  },
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/EnemyBlade.fbx",
+    "bytes": 34508,
+    "sha256": "16c3d747dcbb0fc12902f4d99a31edee06c02348815308dc19a02ac1955ee515",
+    "licence": "KayKit CC0"
+  },
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/EnemyStaff.fbx",
+    "bytes": 77836,
+    "sha256": "7b9fa1ec537d6c5d609e83c2e3d13e247ca252716cab36a6fa83a63100145457",
+    "licence": "KayKit CC0"
+  },
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Gate.fbx",
+    "bytes": 48412,
+    "sha256": "2f1c60581d8525a69a6b25bc88cd96041f3aaff0d370c5a2e080323660b7168c",
+    "licence": "Original project asset"
+  },
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Guardian.fbx",
+    "bytes": 22402076,
+    "sha256": "783d88baface5b5aec4be3a1bdfe360e12e091dae753b3968161e7a69bd0c279",
+    "licence": "KayKit CC0"
+  },
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Hero.fbx",
+    "bytes": 20659324,
+    "sha256": "b25e35cc7eaaa3c7c103f10a4f41fde1cbd81936fede9aa9ae4efbd29d40ba1b",
+    "licence": "KayKit CC0"
+  },
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/HeroAtlas.png",
+    "bytes": 14624,
+    "sha256": "59aca3c457fc93eea0180ef7a6fa84a82ee72c09316e07e9a7aef74bf3b10770",
+    "licence": "KayKit CC0"
+  },
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Panel.png",
+    "bytes": 596,
+    "sha256": "393ccb1db8f6337c2087000aee6c83f6e7c4c8eaba994ef6136a6e91febe26fc",
+    "licence": "Original project asset"
+  },
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Room.fbx",
+    "bytes": 631564,
+    "sha256": "b6473a0162880681d7699b1e7a23e80facbc6eff136a4fa6dfb9d2f8a1cfcefb",
+    "licence": "Original project asset"
+  },
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Spark.png",
+    "bytes": 1720,
+    "sha256": "2f3ccd4e8214166b0a038c722ca2c855532f03323d8c34accaff984d8fab7370",
+    "licence": "Original project asset"
+  },
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/StoneGrain.png",
+    "bytes": 219799,
+    "sha256": "c3a6b1f6462670092e771cc84e8c3c8b7679ed2a467b31a743cbfdba416068e0",
+    "licence": "Original project asset"
+  },
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/TouchRing.png",
+    "bytes": 1212,
+    "sha256": "56446dd03f2faa93650b3ba7a668944bff25db9369d0f54056cd124f0c5a1514",
+    "licence": "Original project asset"
+  },
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Wand.fbx",
+    "bytes": 23516,
+    "sha256": "f4c563572a1ed37ef88521cd904c5634632642eb3c4e0d80b7db1e5362ab7b38",
+    "licence": "KayKit CC0"
+  }
+]
