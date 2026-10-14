@@ -42,6 +42,11 @@ mergeInto(LibraryManager.library, {
   PrototypeControls_Inside: function () { return PrototypeCanvasInput.inside ? 1 : 0; },
   PrototypeControls_Epoch__deps: ['$PrototypeCanvasInput'],
   PrototypeControls_Epoch: function () { return PrototypeCanvasInput.epoch; },
+  // Read-only presentation sizing; never changes focus, epochs or input ownership.
+  PrototypeQuestions_CanvasPixelRatio: function () {
+    var width = Module.canvas.getBoundingClientRect().width;
+    return width > 0 ? Module.canvas.width / width : 1;
+  },
   PrototypeControls_Touch: function () {
     return navigator.maxTouchPoints > 0 && window.matchMedia('(pointer: coarse)').matches ? 1 : 0;
   }

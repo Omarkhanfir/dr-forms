@@ -46,7 +46,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
       const context = await browser.newContext({...(touch ? {
         viewport: phone ? { width: 390, height: 844 } : { width: 1024, height: 768 }, hasTouch: true, isMobile: true, deviceScaleFactor: 1,
         userAgent: 'Mozilla/5.0 (Linux; Android 13; Tablet) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
-      } : { viewport: { width: 1280, height: 900 } }),...(process.env.DRFORMS_RECORD_VIDEO==='1'?{recordVideo:{dir:path.join(artifacts,'video'),size:{width:1280,height:900}}}:{})});
+      } : { viewport: { width: 1280, height: 900 },deviceScaleFactor:Number(process.env.DRFORMS_LAYOUT_DPR||1) }),...(process.env.DRFORMS_RECORD_VIDEO==='1'?{recordVideo:{dir:path.join(artifacts,'video'),size:{width:1280,height:900}}}:{})});
       const page = await context.newPage();
       if(phone) await page.addInitScript(()=>{document.hasFocus=()=>false;});
       await page.addInitScript(() => {
@@ -63,7 +63,8 @@ function passed(name, details) { result.checks.push({ name, details }); console.
       page.on('pageerror', error => target.events.push({ type: 'pageerror', text: error.message }));
       page.on('requestfailed', req => target.events.push({ type: 'requestfailed', url: req.url() }));
       page.on('response', res => { if (res.status() >= 400) target.events.push({ type: 'http-error', url: res.url(), status: res.status() }); });
-      await page.goto(`http://127.0.0.1:${port}${phone ? "/?longQuestions=1" : "/"}`, { waitUntil: 'domcontentloaded' });
+      const longFixture=phone||(process.env.DRFORMS_CAPTURE_QUESTION_LAYOUT_ONLY==='1'&&process.env.DRFORMS_LAYOUT_LONG==='1');
+      await page.goto(`http://127.0.0.1:${port}${longFixture ? "/?longQuestions=1" : "/"}`, { waitUntil: 'domcontentloaded' });
       await page.waitForFunction(() => !!window.prototypeInstance, null, { timeout: 180000 });
       await page.waitForTimeout(5500);
       const snapshot = async () => {
@@ -148,14 +149,19 @@ function passed(name, details) { result.checks.push({ name, details }); console.
     const option=async(t,s,index)=>{
       for(let i=0;i<18;i++){
         const p=s.answerCenters[index];
-        if(p.y>s.screenHeight*.27 && p.y<s.screenHeight*.92) return s;
-        const start=await t.client(s,{x:s.screenWidth*.75,y:s.screenHeight*.45});
+        const viewport=s.questionLayout?.viewport,ratio=s.questionLayout?.pixelRatio||1;
+        const below=viewport?.width>0?(s.screenHeight-p.y)/ratio>viewport.y+viewport.height-10:p.y<s.screenHeight*.27;
+        const above=viewport?.width>0?(s.screenHeight-p.y)/ratio<viewport.y+10:p.y>s.screenHeight*.92;
+        if(!below&&!above) return s;
+        const origin=viewport?.width>0?{x:(viewport.x+viewport.width*.75)*ratio,y:s.screenHeight-(viewport.y+viewport.height*.5)*ratio}:{x:s.screenWidth*.75,y:s.screenHeight*.45};
+        const start=await t.client(s,origin);
         if(t.target.touch){
-          const end=await t.client(s,{x:s.screenWidth*.75,y:s.screenHeight*(p.y<s.screenHeight*.27?.75:.3)});
+          const endPoint=viewport?.width>0?{x:origin.x,y:s.screenHeight-(viewport.y+viewport.height*(below?.15:.85))*ratio}:{x:s.screenWidth*.75,y:s.screenHeight*(below?.75:.3)};
+          const end=await t.client(s,endPoint);
           await t.cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...start,id:8}]});
           for(let step=1;step<=6;step++){await t.cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:start.x+(end.x-start.x)*step/6,y:start.y+(end.y-start.y)*step/6,id:8}]});await t.page.waitForTimeout(30);}
           await t.cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-        }else{await t.page.mouse.move(start.x,start.y);await t.page.mouse.wheel(0,p.y<s.screenHeight*.27?220:-220);}
+        }else{await t.page.mouse.move(start.x,start.y);await t.page.mouse.wheel(0,below?220:-220);}
         await t.page.waitForTimeout(200);s=await t.snapshot();
       }
       throw Error('Option cannot be scrolled into view: '+JSON.stringify(s));
@@ -458,6 +464,23 @@ function passed(name, details) { result.checks.push({ name, details }); console.
     const d=await open(false);let s=await poll(d,x=>x.wave===1);
     // First run: guard regressions + keyboard + preserved retry mid-run.
     s=await clearWave(d,true);
+    if(process.env.DRFORMS_CAPTURE_QUESTION_LAYOUT_ONLY==='1'){
+      const longContent=process.env.DRFORMS_LAYOUT_LONG==='1',captures=[];
+      for(const [label,width,height] of [['phone',390,844],['phone-landscape',844,390],['tablet',1024,768],['desktop',1440,900],['phone-small',320,568]]){
+        await d.page.setViewportSize({width,height});await d.page.waitForTimeout(400);s=await d.snapshot();
+        const layout=s.questionLayout;assert(s.questionPaused&&s.answers.length===0&&s.selectedAnswer===-1);
+        assert(layout.paper.width<=681&&layout.paper.width<width-10);
+        assert(layout.submit.height>=43.5&&layout.submit.height<=45);
+        assert(layout.buttons.every(b=>b.height>=43.5&&b.width<=layout.viewport.width+1));
+        assert(layout.textRequiredHeight.every((h,i)=>h<=layout.textAreaHeight[i]+1),'Answer text clipped by its own button');
+        if(!longContent)assert(layout.buttons.every(b=>b.width<=161&&b.height<=45),'Short choices must remain compact');
+        captures.push({label,width,height,layout});
+        await d.page.screenshot({path:path.join(artifacts,`question-${longContent?'long':'normal'}-${label}.png`)});
+      }
+      fs.writeFileSync(path.join(artifacts,'question-layout-metrics.json'),JSON.stringify(captures,null,2));
+      passed('Responsive question widths, content wrapping and 44px touch targets at five sizes',{longContent});
+      await d.context.close();return;
+    }
     if(process.env.DRFORMS_CAPTURE_PHONE_QUESTION_ONLY==='1'){
       for(const [label,width,height] of [['portrait',390,844],['landscape',844,390]]){
         await d.page.setViewportSize({width,height});await d.page.waitForTimeout(350);s=await d.snapshot();

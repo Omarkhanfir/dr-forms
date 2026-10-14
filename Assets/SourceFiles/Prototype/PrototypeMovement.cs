@@ -155,6 +155,7 @@ namespace DrForms.Prototype
                 inputReady = controls.InputReady, pointerPressed = PrototypeControls.AnyPointerPressed(),
                 selectedAnswer = questions != null ? questions.Selected : -1,
                 questionInputReady = questions != null && questions.InputReady,
+                questionLayout = questions != null ? questions.LayoutVerification : default,
                 submitCenter = questions != null ? questions.SubmitCenter : Vector2.zero,
                 questionPaused = questions != null && questions.Paused,
                 answers = questions != null ? questions.Answers : new int[0],
@@ -252,6 +253,7 @@ namespace DrForms.Prototype
             public float timeScale;
             public int browserEpoch;
             public bool questionInputReady;
+            public PrototypeQuestions.LayoutMetrics questionLayout;
             public int selectedAnswer;
             public Vector2 submitCenter;
             public bool questionPaused;
