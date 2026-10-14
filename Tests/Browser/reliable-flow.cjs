@@ -5,6 +5,7 @@ assert(artifacts && path.isAbsolute(artifacts), 'Set DRFORMS_FLOW_ARTIFACTS to a
 const root = process.env.DRFORMS_FLOW_BUILD_PATH || path.join(artifacts, 'GamePrototypeBuild');
 const port = Number(process.env.DRFORMS_FLOW_PORT || 8766);
 const result = { sessions: [], checks: [] };
+const recordings=[];
 const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 // Check all four viewport rays, including the ground behind touch controls.
 const groundCoverage = s => {
@@ -15,7 +16,8 @@ const groundCoverage = s => {
     const d={x:f.x+r.x*x*tan*aspect+u.x*y*tan,y:f.y+u.y*y*tan,z:f.z+r.z*x*tan*aspect+u.z*y*tan};
     assert(d.y<0,'Camera reveals sky');
     const t=(.006-s.camera.y)/d.y;
-    assert(t>0&&Math.abs(s.camera.x+d.x*t)<79&&Math.abs(s.camera.z+d.z*t)<79,'Camera reveals scenery edge');
+    // Wider portrait composition uses the extended 240-unit scenery mesh.
+    assert(t>0&&Math.abs(s.camera.x+d.x*t)<119&&Math.abs(s.camera.z+d.z*t)<119,'Camera reveals scenery edge');
   }
 };
 const server = http.createServer((req, res) => {
@@ -48,6 +50,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
         userAgent: 'Mozilla/5.0 (Linux; Android 13; Tablet) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
       } : { viewport: { width: 1280, height: 900 },deviceScaleFactor:Number(process.env.DRFORMS_LAYOUT_DPR||1) }),...(process.env.DRFORMS_RECORD_VIDEO==='1'?{recordVideo:{dir:path.join(artifacts,'video'),size:{width:1280,height:900}}}:{})});
       const page = await context.newPage();
+      if(page.video())recordings.push({label:touch?(phone?'phone':'tablet'):'desktop',context,video:page.video()});
       if(phone) await page.addInitScript(()=>{document.hasFocus=()=>false;});
       await page.addInitScript(() => {
         window.touchAudit = [];
@@ -470,15 +473,21 @@ function passed(name, details) { result.checks.push({ name, details }); console.
         await d.page.setViewportSize({width,height});await d.page.waitForTimeout(400);s=await d.snapshot();
         const layout=s.questionLayout;assert(s.questionPaused&&s.answers.length===0&&s.selectedAnswer===-1);
         assert(layout.paper.width<=681&&layout.paper.width<width-10);
-        assert(layout.submit.height>=43.5&&layout.submit.height<=45);
+        assert(layout.submit.height>=49&&layout.submit.height<=67);
         assert(layout.buttons.every(b=>b.height>=43.5&&b.width<=layout.viewport.width+1));
         assert(layout.textRequiredHeight.every((h,i)=>h<=layout.textAreaHeight[i]+1),'Answer text clipped by its own button');
-        if(!longContent)assert(layout.buttons.every(b=>b.width<=161&&b.height<=45),'Short choices must remain compact');
+        assert(layout.promptRequiredHeight<=layout.promptAreaHeight+1,'Question text clipped by its own container');
+        assert(layout.bodyFontSize>=20&&layout.bodyFontSize<=26.5&&layout.answerFontSize>=19&&layout.answerFontSize<=25,'Reading text must be enlarged responsively');
+        assert(Math.abs(layout.submit.x+layout.submit.width/2-(layout.paper.x+layout.paper.width/2))<1,'Submit must be centered');
+        assert(layout.buttons.every(b=>Math.abs(b.x+b.width/2-(layout.paper.x+layout.paper.width/2))<1),'Choices must be centered');
+        assert(layout.paper.y>=9&&layout.paper.y+layout.paper.height<=height-9,'Parchment must stay inside the viewport');
+        assert(layout.submit.y>=layout.viewport.y+layout.viewport.height,'Submit must remain outside scrolling content');
+        if(!longContent)assert(layout.buttons.every(b=>b.width<=211&&b.height<=67),'Short choices must grow within responsive limits');
         captures.push({label,width,height,layout});
         await d.page.screenshot({path:path.join(artifacts,`question-${longContent?'long':'normal'}-${label}.png`)});
       }
       fs.writeFileSync(path.join(artifacts,'question-layout-metrics.json'),JSON.stringify(captures,null,2));
-      passed('Responsive question widths, content wrapping and 44px touch targets at five sizes',{longContent});
+      passed('Centered responsive questions, content wrapping and enlarged touch targets at five sizes',{longContent});
       await d.context.close();return;
     }
     if(process.env.DRFORMS_CAPTURE_PHONE_QUESTION_ONLY==='1'){
@@ -598,5 +607,8 @@ function passed(name, details) { result.checks.push({ name, details }); console.
     passed('Full viewport ground coverage holds for every portrait, landscape and camera-follow snapshot');
     passed('No browser errors, page exceptions, or failed requests');
   }catch(error){result.error=error.stack;console.error(error);process.exitCode=1;}
-  finally{fs.writeFileSync(path.join(artifacts,'reliable-flow-browser-result.json'),JSON.stringify(result,null,2));if(browser)await browser.close();server.close();}
+  finally{fs.writeFileSync(path.join(artifacts,'reliable-flow-browser-result.json'),JSON.stringify(result,null,2));
+    for(const recording of recordings){await recording.context.close();await recording.video.saveAs(path.join(artifacts,`flow-${recording.label}-compositor.webm`));}
+    if(browser)await browser.close();
+    server.close();}
 })();

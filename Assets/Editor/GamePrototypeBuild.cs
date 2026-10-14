@@ -123,6 +123,7 @@ public static class GamePrototypeBuild
         var notices = Path.Combine(output, "ThirdPartyNotices");
         Directory.CreateDirectory(notices);
         File.Copy(fontNotice, Path.Combine(notices, "Cormorant-OFL.txt"), true);
+        File.Copy(Path.Combine(project,"docs","licenses","Lato-OFL.txt"),Path.Combine(notices,"Lato-OFL.txt"),true);
     }
 
     public static void AddQuestionsAndBuild()

@@ -25,8 +25,8 @@ def build(name):
    mod=o.modifiers.new('Rounded','BEVEL');mod.width=.07;mod.segments=2;bpy.ops.object.modifier_apply(modifier=mod.name)
   o.data.materials.append(mats[mat]);g=o.vertex_groups.new(name=bone);g.add(list(range(len(o.data.vertices))),1,'REPLACE');parts.append(o)
  if name=='Hero':
-  shape('Lab coat',(0,0,1.22),(.42,.25,.46),'Ivory',box=True)
-  for x in [-.22,.22]:shape('Coat tails',(x,.08,.82),(.20,.24,.20),'Ivory','Coat.L' if x<0 else 'Coat.R',True)
+  shape('Lab coat',(0,0,1.30),(.36,.23,.38),'Ivory',box=True)
+  for x in [-.22,.22]:shape('Coat tails',(x,.10,.91),(.17,.20,.18),'Ivory','Coat.L' if x<0 else 'Coat.R',True)
   shape('Teal shirt',(0,-.255,1.3),(.12,.035,.27),'Teal',box=True)
   for z in [1.1,1.3,1.5]:shape('Coat buttons',(.19,-.28,z),(.035,.025,.035),'Black')
   shape('Head',(0,0,1.97),(.35,.29,.36),'Skin','Head')
@@ -51,7 +51,8 @@ def build(name):
  for side,x in [('L',-.22),('R',.22)]:
   shape('Trouser '+side,(x,0,.64),(.16,.18,.20),'Teal','Leg.'+side)
   shape('Lower trouser '+side,(x,0,.34),(.14,.16,.18),'Teal','Shin.'+side)
-  shape('Boot '+side,(x,-.09,.15),(.19,.27,.16),'Black','Foot.'+side,True)
+  shape('Boot '+side,(x,-.13,.15),(.19,.31,.16),'Teal','Foot.'+side,True)
+  shape('Boot sole '+side,(x,-.13,.065),(.19,.31,.05),'Black','Foot.'+side,True)
  for side,x in [('L',-.48),('R',.48)]:
   shape('Sleeve '+side,(x,0,1.36),(.16,.18,.17),'Ivory' if name=='Hero' else ('Green' if name=='Guardian' else 'Violet'),'Arm.'+side)
   shape('Cuff '+side,(x,0,1.10),(.14,.16,.17),'Ivory' if name=='Hero' else 'Teal','Forearm.'+side)
@@ -73,7 +74,8 @@ def build(name):
     if name=='Acolyte':stride_width*=.7
     bob=(1-math.cos(t*math.tau*2))*(.032 if running else .014)
     root_height=(-.16 if running else -.04)+bob
-    rig.pose.bones['Root'].location.z=root_height
+    # Root bone's local Y is world up; local Z is world backward.
+    rig.pose.bones['Root'].location.y=root_height
     for side,sign in [('L',1),('R',-1)]:
      phase=(t+(0 if side=='L' else .5))%1
      # Linear stance travel, eased airborne return and bent swing knee.
@@ -91,7 +93,7 @@ def build(name):
      rig.pose.bones['Foot.'+side].rotation_euler.x=-(hip+bend)
      rig.pose.bones['Arm.'+side].rotation_euler.x=-stride*(.50 if running else .24)
      rig.pose.bones['Forearm.'+side].rotation_euler.x=-.30 if running else -.12
-     rig.pose.bones['Coat.'+side].rotation_euler.x=math.sin(t*math.tau-.65)*.16*sign
+     rig.pose.bones['Coat.'+side].rotation_euler.x=math.sin(t*math.tau-.65)*.26*sign
     rig.pose.bones['Root'].location.x=wave*(.055 if name!='Acolyte' else .025)
     rig.pose.bones['Body'].rotation_euler.x=.16 if running else .04
     rig.pose.bones['Body'].rotation_euler.y=wave*(.12 if name=='Guardian' else .065)
@@ -100,7 +102,7 @@ def build(name):
     rig.pose.bones['Head'].rotation_euler.z=-wave*.04
    elif action_name=='Stopping':
     pulse=math.sin(t*math.pi)*(1-t)
-    rig.pose.bones['Root'].location.z=-pulse*.10
+    rig.pose.bones['Root'].location.y=-pulse*.10
     rig.pose.bones['Body'].rotation_euler.x=-pulse*.32
     rig.pose.bones['Leg.L'].rotation_euler.x=pulse*.40
     rig.pose.bones['Shin.L'].rotation_euler.x=-pulse*.55
@@ -109,7 +111,7 @@ def build(name):
     rig.pose.bones['Satchel'].rotation_euler.x=math.sin(t*math.pi*2)*.18
    elif action_name=='Turning':
     pulse=math.sin(t*math.tau)
-    rig.pose.bones['Root'].location.z=-pulse*.04
+    rig.pose.bones['Root'].location.y=-pulse*.04
     rig.pose.bones['Body'].rotation_euler.z=pulse*.18
     rig.pose.bones['Head'].rotation_euler.z=pulse*.24
     rig.pose.bones['Leg.L'].rotation_euler.x=pulse*.28
@@ -117,13 +119,13 @@ def build(name):
     rig.pose.bones['Satchel'].rotation_euler.z=-pulse*.20
    elif action_name=='Spellcast_Shoot':
     # Exact frame 6 / .10s release. Back cock -> extension -> recoil -> settle.
-    keys=[(0,0),(.24,.95),(.40,-1.05),(.64,-1.38),(1,0)]
+    keys=[(0,.25),(.24,1.30),(.40,-1.35),(.64,-1.60),(1,0)]
     angle=0
     for (a,av),(b,bv) in zip(keys,keys[1:]):
      if a<=t<=b:angle=av+(bv-av)*(t-a)/(b-a);break
     rig.pose.bones['Arm.R'].rotation_euler.x=angle
     rig.pose.bones['Arm.R'].rotation_euler.z=-math.sin(t*math.pi)*.26
-    rig.pose.bones['Forearm.R'].rotation_euler.x=-math.sin(min(t/.4,1)*math.pi)*.85
+    rig.pose.bones['Forearm.R'].rotation_euler.x=-math.sin(min(t/.4,1)*math.pi)*1.15
     rig.pose.bones['Coat.R'].rotation_euler.x=math.sin(t*math.pi)*.18
    elif action_name=='Spellcasting':
     prepare=min(1,t/.68);release=max(0,min(1,(t-.68)/.16));recover=max(0,(t-.84)/.16)
@@ -138,8 +140,8 @@ def build(name):
     rig.pose.bones['Arm.R'].rotation_euler.x=(-.7 if t>.55 else .6)*pulse
     rig.pose.bones['Head'].rotation_euler.x=pulse*.12
    elif action_name=='Hit_A':
-    rig.pose.bones['Body'].rotation_euler.x=-math.sin(t*math.pi)*.25
-    rig.pose.bones['Head'].rotation_euler.x=math.sin(t*math.pi)*.18
+    rig.pose.bones['Body'].rotation_euler.x=-math.sin(t*math.pi)*.42
+    rig.pose.bones['Head'].rotation_euler.x=math.sin(t*math.pi)*.26
    elif action_name=='Death_A':
     collapse=max(0,(t-.18)/.82)
     rig.pose.bones['Body'].rotation_euler.x=math.sin(t*math.pi)*.34

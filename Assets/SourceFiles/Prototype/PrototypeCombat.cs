@@ -86,6 +86,7 @@ namespace DrForms.Prototype
             AimDirection = (nearest.transform.position - transform.position).normalized;
             var muzzle = GetComponent<CourtyardActor>()?.ReleasePosition ?? transform.position + AimDirection * .65f;
             LastReleaseOrigin=muzzle;ReleaseDelay=Time.time-LastWindupTime;
+            GetComponent<CourtyardActor>()?.ReleaseFlask();
             shot.transform.position = muzzle;
             shot.transform.localScale = Vector3.one * (.34f + Mathf.Clamp(damage-25,0,30)*.004f);
             var material = CourtyardArt.EnvironmentMaterial("Green");

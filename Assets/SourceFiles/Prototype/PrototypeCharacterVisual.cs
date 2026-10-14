@@ -65,12 +65,12 @@ namespace DrForms.Prototype
             if (ground != null) ground.GetComponent<Renderer>().enabled = false;
             // A single vertex-coloured mesh extends well beyond unchanged floor/wall collision.
             var vertices = new List<Vector3>(); var colors = new List<Color>(); var triangles = new List<int>();
-            for (int z = -40; z < 40; z++) for (int x = -40; x < 40; x++) {
-                if(Mathf.Abs(x*2+1)<10 && Mathf.Abs(z*2+1)<10)continue;
+            for (int z = -60; z < 60; z++) for (int x = -60; x < 60; x++) {
+                if(Mathf.Abs(x*2+1)<10 && (Mathf.Abs(z*2+1)<10 || Mathf.Abs(z*2+1-24)<10 || Mathf.Abs(z*2+1-48)<10))continue;
                 int first = vertices.Count;
                 float shade = ((x * 17 + z * 31) & 3) * .009f;
                 bool path = Mathf.Abs(x * 2 + 1) < 2 && z * 2 + 1 > -8 && z * 2 + 1 < 63;
-                Color color = path ? new Color(.49f + shade, .55f + shade, .50f + shade) : new Color(.16f + shade, .27f + shade, .23f + shade);
+                Color color = path ? new Color(.38f + shade, .48f + shade, .48f + shade) : new Color(.13f + shade, .22f + shade, .24f + shade);
                 vertices.Add(new Vector3(x*2,.006f,z*2)); vertices.Add(new Vector3(x*2,.006f,z*2+2));
                 vertices.Add(new Vector3(x*2+2,.006f,z*2+2)); vertices.Add(new Vector3(x*2+2,.006f,z*2));
                 for (int i=0;i<4;i++) colors.Add(color);

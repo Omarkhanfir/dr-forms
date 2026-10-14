@@ -83,7 +83,6 @@ namespace DrForms.Prototype
                 }
                 var door = Barrier("Locked room " + (room + 1) + " exit", new Vector3(0, 1.4f, z + 10), new Vector3(4, 2.8f, .6f), 3);
                 exitLamps[room]=PrototypeCharacterVisual.Part(route.transform,"Laboratory exit status",PrimitiveType.Cube,new Vector3(1.65f,2.95f,z+9.6f),new Vector3(.3f,.18f,.12f),6).GetComponent<Renderer>();
-                if(room>0)CourtyardArt.DressGate(door.transform);
                 doors[room] = door.transform; doorColliders[room] = door.GetComponent<BoxCollider>();
                 if (questions.AnswerCount > room) { doorOpen[room] = 1; door.transform.position += Vector3.up * 3.2f; doorColliders[room].enabled = false; }
                 // Flat directional markers serve navigation rather than decoration.
@@ -100,6 +99,7 @@ namespace DrForms.Prototype
             transform.position = new Vector3(0, 1, RoomCenter(currentRoom) - (currentRoom == 0 ? 0 : 7));
             controller.enabled = true;
             CourtyardArt.BuildRoom(route.transform, doors[0]);
+            for(int room=1;room<3;room++)CourtyardArt.DressGate(doors[room]);
             Camera.main.GetComponent<PrototypeCameraFollow>().ResetComposition();
         }
 

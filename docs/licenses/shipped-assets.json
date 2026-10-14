@@ -1,8 +1,8 @@
 [
   {
     "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Acolyte.fbx",
-    "bytes": 1504828,
-    "sha256": "9fea5929f024dfc3d8a6ddf7192469dc07b896d8743fb25586fb649882910e27",
+    "bytes": 1508796,
+    "sha256": "6e718a0c038ae3ef6c92340351d15f6b08e4c409c19d0e4af065fe62ea4e28d5",
     "licence": "Original Dr.forms project asset (replaces historical KayKit character)"
   },
   {
@@ -25,20 +25,20 @@
   },
   {
     "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Gate.fbx",
-    "bytes": 51708,
-    "sha256": "a9f7456a850ced01c500fdff78cb9ca822a1506609049cd7499a80de93b5f6aa",
+    "bytes": 57756,
+    "sha256": "c3a957655ffaae00854eeda292be6491e698019c22f8144628361f194ed9ddfc",
     "licence": "Original project asset"
   },
   {
     "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Guardian.fbx",
-    "bytes": 1503868,
-    "sha256": "a2e158cca2399a5be240078f65f15314e229577ca2438ff3b2b743864f2d1ac5",
+    "bytes": 1507676,
+    "sha256": "3e5e41c3a5c87cce2b0ab672ae64b2f40aa65c170ffe10da4b9cc64606896b1e",
     "licence": "Original Dr.forms project asset (replaces historical KayKit character)"
   },
   {
     "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Hero.fbx",
-    "bytes": 1540444,
-    "sha256": "84feb033eec82708cc94d0164832ea941b187804c3098ec7d6bd4ef026c0bff4",
+    "bytes": 1544332,
+    "sha256": "03fb5c604dd9446c7161a9e791f39dabdc8aaa2a688eebf31f564db83aace5fb",
     "licence": "Original Dr.forms project asset (replaces historical KayKit character)"
   },
   {
@@ -55,8 +55,8 @@
   },
   {
     "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Room.fbx",
-    "bytes": 698396,
-    "sha256": "8deffed99e8148cda50692be188565e0741d759bfcc464ae79f12254da1592fc",
+    "bytes": 545020,
+    "sha256": "9f58b807cec3a3f511e2c946dabbe27573f4b477e1013721ea84174e408fb8e1",
     "licence": "Original project asset"
   },
   {
@@ -96,5 +96,25 @@
     "licence": "Cormorant Garamond SemiBold; SIL OFL 1.1; unmodified",
     "source": "https://raw.githubusercontent.com/CatharsisFonts/Cormorant/016784836d2ad47bc4c62b7f504a0a5875d85aeb/fonts/ttf/CormorantGaramond-SemiBold.ttf",
     "sourceRevision": "016784836d2ad47bc4c62b7f504a0a5875d85aeb"
+  },
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/AnswerPanel.png",
+    "licence": "Original Dr.forms rounded answer mask",
+    "bytes": 416,
+    "sha256": "7011798d10f6a46fc1cf3eae659a0a0622ea4db218afe39fca41ee5483e48dfd"
+  },
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/AnswerFocus.png",
+    "licence": "Original Dr.forms rounded focus mask",
+    "bytes": 420,
+    "sha256": "2b050cad9de4290f7f0a3612265ed628cda73c83375a8e7d5a7c5b19aa268708"
+  },
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/ManuscriptBody.ttf",
+    "licence": "Lato Regular; SIL OFL 1.1; unmodified",
+    "bytes": 656568,
+    "sha256": "d636e4683231f931eda222d588e944d082bfd3bdba02f928bee461c0f185b251",
+    "sourceRevision": "5d3b76120a319730fda218cc7410174a462b32cb",
+    "source": "https://raw.githubusercontent.com/google/fonts/5d3b76120a319730fda218cc7410174a462b32cb/ofl/lato/Lato-Regular.ttf"
   }
 ]

@@ -58,5 +58,17 @@
     "source": "https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0/15b62b9bad122f72926c10fb14d622c73819fa54/LICENSE.txt",
     "sha256": "5d822abca4e08c5a91d329e5372b3dc605cba8d994f752cb0f7dfdb7a0a79954",
     "revision": "15b62b9bad122f72926c10fb14d622c73819fa54"
+  },
+  {
+    "file": "Lato-Regular.ttf",
+    "source": "https://raw.githubusercontent.com/google/fonts/5d3b76120a319730fda218cc7410174a462b32cb/ofl/lato/Lato-Regular.ttf",
+    "sha256": "d636e4683231f931eda222d588e944d082bfd3bdba02f928bee461c0f185b251",
+    "revision": "5d3b76120a319730fda218cc7410174a462b32cb"
+  },
+  {
+    "file": "Lato-OFL.txt",
+    "source": "https://raw.githubusercontent.com/google/fonts/5d3b76120a319730fda218cc7410174a462b32cb/ofl/lato/OFL.txt",
+    "sha256": "74ba064d03f1f1c4a952da936c3eb71866c34404916734de3cae73b34357e59e",
+    "revision": "5d3b76120a319730fda218cc7410174a462b32cb"
   }
 ]

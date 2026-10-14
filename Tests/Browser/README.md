@@ -163,3 +163,31 @@ and byte-range seeking. `GamePrototypeBuild.Build` also packages the OFL font
 notice beside future player outputs.
 
 The motion suite uses the default room-one chaser speed (1.8 units/sec) and read-only initial spawn observations to begin moving away before contact. Run it separately from other software-rendered browser suites when verifying the short pending-throw interruption window.
+
+For **DRFORMS-LAB-MOTION-4**, use the external `LabMotionDeliveryBuild` player and
+`ArcheroPassEvidence` artifacts. Run `courtyard-visual.cjs` alone, then the full
+`reliable-flow.cjs` and `polish-ui.cjs` suites. The camera reframes on aspect changes
+even when a question/manual pause freezes time. Ground coverage now checks the
+extended 240-unit presentation mesh; gameplay collision dimensions are unchanged.
+
+Question capture mode: set `DRFORMS_CAPTURE_QUESTION_LAYOUT_ONLY=1`. It validates
+centering, wrapping of both prompts and answers, responsive larger text/touch
+targets, and fixed Submit placement at 390x844, 844x390, 1024x768, 1440x900 and
+320x568. Repeat with `DRFORMS_LAYOUT_LONG=1`, then also
+`DRFORMS_LAYOUT_DPR=1.5`. The long fixture includes French/Spanish accented text.
+These captures use resized Chrome viewports; the complete flow separately drives
+actual CDP touch input in phone/tablet emulation. Inspect the PNGs, including
+scrolled selected answers, rather than relying only on dimension assertions.
+
+`presentation-performance.cjs` observes 12 one-second windows of an actual first
+encounter at desktop/tablet/phone resolutions, without gameplay injection. It
+records Unity frame-counter increments and browser requestAnimationFrame rates,
+plus matching initial composition screenshots. Run before/after sequentially
+without other browser suites/builds for comparison. Software-rendered counters
+are not hardware GPU FPS, presented-frame latency, or physical iPhone evidence.
+
+Record compositor videos with the existing encoder preload described above.
+Inspect normal-speed playback and consecutive decoded frames for alternating
+feet, upper-body aiming during moving throws, hand release, creature anticipation,
+hit and defeat. Raw recordings/comparison pages/builds stay outside Git. Scenes
+and viewport sizes match in comparisons; randomized enemy placement can differ.

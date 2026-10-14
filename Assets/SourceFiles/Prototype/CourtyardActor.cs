@@ -3,8 +3,11 @@ using UnityEngine;
 using UnityEngine.Rendering;
 namespace DrForms.Prototype {
  // Imported rig and real skeletal clips; never moves the gameplay controller.
+ [DefaultExecutionOrder(-10)]
  public sealed class CourtyardActor : MonoBehaviour {
-  private Transform rig,weapon,shield,hand;
+  private Transform rig,weapon,shield,hand,upperBody;
+  private float upperAim,modelScale;
+  public void ReleaseFlask(){if(weapon!=null)weapon.gameObject.SetActive(false);}
   public Vector3 ReleasePosition => hand!=null?hand.position:transform.position;
   public void BeginThrow(){
    castUntil=Time.time+.25f;
@@ -49,8 +52,10 @@ namespace DrForms.Prototype {
    var bodies=model.GetComponentsInChildren<Renderer>();
    // Establish the animated bind transform before measuring deformed vertices.
    var bounds=Measure(bodies);
-   model.transform.localScale*=(player!=null?2.35f:2.15f)/Mathf.Max(.1f,bounds.size.y);
+   model.transform.localScale*=(player!=null?2.65f:2.35f)/Mathf.Max(.1f,bounds.size.y);
    bounds=Measure(bodies);model.transform.position+=Vector3.up*(rig.position.y-bounds.min.y);
+   modelScale=model.transform.lossyScale.x;
+   upperBody=System.Array.Find(model.GetComponentsInChildren<Transform>(),t=>t.name=="Body");
 
    foreach(var body in bodies){var slots=body.sharedMaterials;for(int i=0;i<slots.Length;i++)slots[i]=CourtyardArt.EnvironmentMaterial(slots[i].name);body.sharedMaterials=slots;body.shadowCastingMode=ShadowCastingMode.On;body.receiveShadows=true;}
    hand=System.Array.Find(model.GetComponentsInChildren<Transform>(),t=>t.name=="handslot.r");
@@ -107,12 +112,11 @@ namespace DrForms.Prototype {
    if(Time.timeScale<=0)return;
    bool moving=delta.sqrMagnitude>.00001f;
    float speed=delta.magnitude/Mathf.Max(.001f,Time.deltaTime);
-   var facing=combat!=null&&Time.time<castUntil?combat.AimDirection:moving?delta:enemy!=null&&enemy.Telegraphing?enemy.LockedAim-transform.position:rig.forward;
+   var facing=moving?delta:combat!=null&&Time.time<castUntil?combat.AimDirection:enemy!=null&&enemy.Telegraphing?enemy.LockedAim-transform.position:rig.forward;
    facing.y=0;
    float angle=facing.sqrMagnitude>.0001f?Vector3.SignedAngle(rig.forward,facing,Vector3.up):0;
    turnLean=Mathf.Lerp(turnLean,Mathf.Clamp(angle/90,-1,1),Time.deltaTime*12);
-   if(combat!=null&&Time.time<castUntil)rig.rotation=Quaternion.Slerp(rig.rotation,Quaternion.LookRotation(combat.AimDirection),Time.deltaTime*20);
-   else if(moving)rig.rotation=Quaternion.Slerp(rig.rotation,Quaternion.LookRotation(delta),Time.deltaTime*14);
+   if(facing.sqrMagnitude>.0001f)rig.rotation=Quaternion.Slerp(rig.rotation,Quaternion.LookRotation(facing),1-Mathf.Exp(-Time.deltaTime*18));
    int damage=player!=null?player.DamageApplications:target!=null?target.DamageApplications:0;
    if(damage!=hits){
     hits=damage;
@@ -145,11 +149,18 @@ namespace DrForms.Prototype {
     turn.time=turn.clip.length*(turnLean>=0?.25f:.75f);motion.Blend("Turning",moving?Mathf.Abs(turnLean)*.6f:0,.08f);
    }
    if(player!=null&&Time.time>=castUntil&&motion["Spellcast_Shoot"]!=null)motion.Blend("Spellcast_Shoot",0,.07f);
-   if(motion["Running_A"]!=null)motion["Running_A"].speed=Mathf.Clamp(speed/2.35f,.1f,2.5f);
-   if(motion["Walking_A"]!=null)motion["Walking_A"].speed=Mathf.Clamp(speed/(enemy!=null&&enemy.IsRanged?.75f:1.05f),.08f,2f);
+   // Cycle covers twice each foot's stance excursion. Match actual controller
+   // displacement, including collisions and analog input, rather than nominal speed.
+   float strideScale=enemy!=null&&enemy.IsRanged?.7f:1;
+   if(motion["Running_A"]!=null)motion["Running_A"].speed=Mathf.Clamp(speed*motion["Running_A"].length/(4*.34f*strideScale*modelScale),.05f,3f);
+   if(motion["Walking_A"]!=null)motion["Walking_A"].speed=Mathf.Clamp(speed*motion["Walking_A"].length/(4*.23f*strideScale*modelScale),.05f,3f);
    float hit=Mathf.Clamp01((hitUntil-Time.time)/.18f);
-   rig.localPosition=Vector3.down+transform.InverseTransformDirection(recoil)*(.12f*Mathf.Sin(hit*Mathf.PI));
-   var tilt=Quaternion.Euler(0,0,-turnLean*(moving?7:0));rig.rotation=Quaternion.LookRotation(rig.forward,Vector3.up)*tilt;
+   rig.localPosition=Vector3.down;
+   // Aim only the articulated torso when throwing on the move. Foot orientation
+   // stays with travel; no whole-model lean or displacement substitutes for poses.
+   float aim=player!=null&&Time.time<castUntil?Vector3.SignedAngle(rig.forward,combat.AimDirection,Vector3.up):0;
+   upperAim=Mathf.LerpAngle(upperAim,aim,1-Mathf.Exp(-Time.deltaTime*32));
+   if(upperBody!=null)upperBody.rotation=Quaternion.AngleAxis(upperAim,Vector3.up)*upperBody.rotation;
    if(Time.time>=hitUntil&&motion["Hit_A"]!=null)motion.Blend("Hit_A",0,.04f);
    tint.SetColor("_BaseColor",Time.time<hitUntil?new Color(1.65f,1.4f,.95f):Color.white);
    foreach(var body in renderers)body.SetPropertyBlock(Time.time<hitUntil?tint:null);

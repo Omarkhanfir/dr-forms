@@ -14,7 +14,7 @@ namespace DrForms.Prototype
         public bool GameplayEnabled { get; private set; } = true;
         public bool InputReady => HasFocus && epoch == PrototypeBrowserInput.Epoch
             && !waitingForRelease && Time.frameCount > inputResumeFrame;
-        public const string BuildId = "DRFORMS-QUESTION-3";
+        public const string BuildId = "DRFORMS-LAB-MOTION-4";
         public bool Started { get; private set; }
         public bool ManualPaused { get; private set; }
         public bool CanPlay => GameplayEnabled && Started && !ManualPaused && InputReady;

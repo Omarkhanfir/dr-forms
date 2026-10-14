@@ -14,8 +14,8 @@ namespace DrForms.Prototype
         {
             flight=transform.position;progress=0;distance=Vector3.Distance(flight,destination.transform.position);owner=source;target=destination;damage=hitDamage;speed=travelSpeed;expires=Time.time+3;finished=false;
             if(trail==null) {
-                trail=gameObject.AddComponent<TrailRenderer>();trail.time=.10f;trail.minVertexDistance=.12f;
-                trail.startWidth=.09f;trail.endWidth=0;
+                trail=gameObject.AddComponent<TrailRenderer>();trail.time=.13f;trail.minVertexDistance=.10f;
+                trail.startWidth=.12f;trail.endWidth=0;
                 trail.startColor=new Color(.75f,1,.84f,1);trail.endColor=new Color(.2f,.75f,.6f,0);trail.generateLightingData=false;
                 trail.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;trail.receiveShadows=false;
             }

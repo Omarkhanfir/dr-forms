@@ -89,7 +89,8 @@ namespace DrForms.Prototype
             public LayoutRect paper, viewport, submit;
             public LayoutRect[] buttons;
             public float[] textRequiredHeight, textAreaHeight;
-            public float pixelRatio;
+            public float pixelRatio, promptRequiredHeight, promptAreaHeight;
+            public float bodyFontSize, answerFontSize;
         }
         public LayoutMetrics LayoutVerification {
             get {
@@ -97,6 +98,8 @@ namespace DrForms.Prototype
                 float ratio=CanvasPixelRatio, cssScale=controls.UIRoot.GetComponentInParent<Canvas>().scaleFactor/ratio;
                 return new LayoutMetrics {
                     paper=CssRect(paper,ratio),viewport=CssRect(viewport,ratio),submit=CssRect((RectTransform)submit.transform,ratio),pixelRatio=ratio,
+                    promptRequiredHeight=WrappedHeight(prompt,prompt.rectTransform.rect.width)*cssScale,promptAreaHeight=prompt.rectTransform.rect.height*cssScale,
+                    bodyFontSize=prompt.fontSize*cssScale,answerFontSize=labels[0].fontSize*cssScale,
                     buttons=options.ConvertAll(b=>CssRect((RectTransform)b.transform,ratio)).ToArray(),
                     textRequiredHeight=labels.ConvertAll(t=>WrappedHeight(t,t.rectTransform.rect.width)*cssScale).ToArray(),
                     textAreaHeight=labels.ConvertAll(t=>t.rectTransform.rect.height*cssScale).ToArray()
@@ -123,7 +126,7 @@ namespace DrForms.Prototype
             // Development-only long-content fixture exercises the production scrolling UI.
             if (Debug.isDebugBuild && Application.absoluteURL.Contains("longQuestions=1"))
                 foreach (var q in content) {
-                    q.prompt += " Imagine you are guiding a friend through the garden. Take your time to consider every choice. You can scroll to read all the text, change your choice, and then use the separate Submit Answer button when you are ready. There is no hurry; the creatures and the game clock wait while this question is open.";
+                    q.prompt += " Café, déjà vu, français, español: é è ê à ç ñ ü. Imagine you are guiding a friend through the laboratory. Take your time to consider every choice. You can scroll to read all the text, change your choice, and then use the separate Submit Answer button when you are ready. There is no hurry; the creatures and the game clock wait while this question is open.";
                     for (int i=0;i<q.options.Length;i++) q.options[i] += " - This is a longer example answer with extra explanation so that we can check wrapping, scrolling, and selection on a small phone. Read the whole choice before deciding; selecting it does not submit it. You may change your choice before using the fixed Submit Answer action.";
                 }
             var root = controls.UIRoot;
@@ -150,7 +153,7 @@ namespace DrForms.Prototype
             contentRect = PrototypeControls.Rect("Scrollable Content", viewport, new Vector2(0, 1), Vector2.one, Vector2.zero, Vector2.zero);
             contentRect.pivot = new Vector2(0.5f, 1);
             var layout = contentLayout = contentRect.gameObject.AddComponent<VerticalLayoutGroup>();
-            layout.childAlignment = TextAnchor.UpperLeft;
+            layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = layout.childControlHeight = true;
             layout.childForceExpandWidth = false; layout.childForceExpandHeight = false;
             contentRect.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
@@ -159,7 +162,8 @@ namespace DrForms.Prototype
             scroll.movementType = ScrollRect.MovementType.Clamped;
             var title = PrototypeControls.Rect("Question Prompt", contentRect, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             prompt = PrototypeControls.Label("Prompt", title, "", 26);
-            prompt.color = Ink; prompt.alignment = TextAnchor.MiddleLeft;
+            prompt.color = Ink; prompt.alignment = TextAnchor.MiddleCenter;
+            prompt.font = Resources.Load<Font>("Courtyard/ManuscriptBody");
             prompt.horizontalOverflow = HorizontalWrapMode.Wrap;
             prompt.verticalOverflow = VerticalWrapMode.Overflow;
             title.gameObject.AddComponent<LayoutElement>().minHeight = 54;
@@ -173,6 +177,7 @@ namespace DrForms.Prototype
                 options.Add(option);
                 labels.Add(PrototypeControls.Label("Answer Text", (RectTransform)option.transform, "", 24));
                 labels[i].color = Ink; labels[i].alignment = TextAnchor.MiddleLeft;
+                labels[i].font = prompt.font;
                 labels[i].rectTransform.offsetMin = new Vector2(56,10); labels[i].rectTransform.offsetMax = new Vector2(-18,-10);
                 var mark = PrototypeControls.Rect("Choice mark", option.transform, new Vector2(0,.5f),new Vector2(0,.5f),new Vector2(28,0),new Vector2(22,22));
                 var markImage = mark.gameObject.AddComponent<Image>(); markImage.color = AnswerGrey; markImage.raycastTarget=false;
@@ -187,9 +192,11 @@ namespace DrForms.Prototype
             footer = PrototypeControls.Rect("Actions", paper, new Vector2(0.08f, 0.05f), new Vector2(0.92f, 0.18f), Vector2.zero, Vector2.zero);
             hint = PrototypeControls.Rect("Question Help", paper, new Vector2(0.06f, 0.185f), new Vector2(0.94f, 0.24f), Vector2.zero, Vector2.zero);
             help = PrototypeControls.Label("Help", hint, "Scroll to read. Choose, then submit.", 14); help.color = Ink;
+            help.font = prompt.font;
             submit = MakeButton("Submit Answer", footer, Submit);
             submit.GetComponent<Image>().color = Burgundy;
             submitLabel = PrototypeControls.Label("Submit Text", (RectTransform)submit.transform, "Submit Answer", 24);
+            submitLabel.font = prompt.font;
             panel.gameObject.SetActive(false);
             if (content == null || content.Length != 3 || waves == null || waves.WaveCount != content.Length
                 || System.Array.Exists(content, q => q == null || string.IsNullOrWhiteSpace(q.prompt) || q.options == null
@@ -209,6 +216,7 @@ namespace DrForms.Prototype
         {
             var rect = PrototypeControls.Rect(name, parent, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             var image = rect.gameObject.AddComponent<Image>(); image.color = AnswerGrey;
+            image.sprite = CourtyardArt.AnswerPanel; image.type = Image.Type.Sliced;
             var rim = rect.gameObject.AddComponent<Outline>(); rim.effectColor = new Color(.37f,.35f,.34f,.7f); rim.effectDistance = new Vector2(1,-1);
             var button = rect.gameObject.AddComponent<PrototypeDeliberateButton>();
             button.Owner = this; button.targetGraphic = image;
@@ -216,12 +224,8 @@ namespace DrForms.Prototype
             colors.highlightedColor = new Color(1.08f,1.08f,1.08f); colors.pressedColor = new Color(.72f,.70f,.68f);
             colors.selectedColor = new Color(.96f,.96f,.96f); colors.disabledColor = new Color(.7f,.7f,.7f); colors.fadeDuration = .09f; button.colors = colors;
             var focus=PrototypeControls.Rect("Keyboard focus",rect,Vector2.zero,Vector2.one,Vector2.zero,new Vector2(-10,-10));
-            foreach(var vertical in new[]{false,true}) foreach(var high in new[]{false,true}) {
-                var min=vertical?new Vector2(high?1:0,0):new Vector2(0,high?1:0);
-                var max=vertical?new Vector2(high?1:0,1):new Vector2(1,high?1:0);
-                var line=PrototypeControls.Rect("Focus line",focus,min,max,Vector2.zero,vertical?new Vector2(2,0):new Vector2(0,2));
-                var graphic=line.gameObject.AddComponent<Image>();graphic.color=name=="Submit Answer"?new Color(1,.93f,.76f):Burgundy;graphic.raycastTarget=false;
-            }
+            var focusGraphic=focus.gameObject.AddComponent<Image>();focusGraphic.sprite=CourtyardArt.AnswerFocus;focusGraphic.type=Image.Type.Sliced;
+            focusGraphic.color=name=="Submit Answer"?new Color(1,.93f,.76f):Burgundy;focusGraphic.raycastTarget=false;
             button.FocusFrame=focus.gameObject;focus.gameObject.SetActive(false);
             button.onClick.AddListener(action);
             return button;
@@ -305,41 +309,46 @@ namespace DrForms.Prototype
             var unit = ratio / root.GetComponentInParent<Canvas>().scaleFactor;
             var available = root.rect.size / unit;
             bool phone = Mathf.Min(available.x,available.y)<600;
-            float margin=phone?10:24, padding=phone?14:24, spacing=phone?7:8;
-            float header=phone?48:54, gap=phone?10:12, helpHeight=18, buttonHeight=44;
-            prompt.fontSize=Mathf.Max(1,Mathf.RoundToInt(17*unit));
-            questionStep.fontSize=Mathf.Max(1,Mathf.RoundToInt((phone?20:22)*unit));
-            help.fontSize=Mathf.Max(1,Mathf.RoundToInt(12*unit));
-            submitLabel.fontSize=Mathf.Max(1,Mathf.RoundToInt(16*unit));
-            foreach(var label in labels)label.fontSize=Mathf.Max(1,Mathf.RoundToInt(16*unit));
+            // Enlarge the reading UI, independently of the gameplay canvas. Compact
+            // landscape keeps usable space for the scroller and the fixed Submit.
+            float readingScale=Mathf.Min(1.5f,Mathf.Clamp(available.x/260f,1.12f,1.5f));
+            if(available.y<450)readingScale=Mathf.Min(readingScale,1.25f);
+            float margin=phone?10:24, padding=phone?18:30, spacing=phone?10:12;
+            float header=phone?42:50, gap=phone?10:12, helpHeight=22, buttonHeight=44*readingScale;
+            prompt.fontSize=Mathf.Max(1,Mathf.RoundToInt(17*readingScale*unit));
+            questionStep.fontSize=Mathf.Max(1,Mathf.RoundToInt(22*readingScale*unit));
+            help.fontSize=Mathf.Max(1,Mathf.RoundToInt(12*readingScale*unit));
+            submitLabel.fontSize=Mathf.Max(1,Mathf.RoundToInt(16*readingScale*unit));
+            foreach(var label in labels)label.fontSize=Mathf.Max(1,Mathf.RoundToInt(16*readingScale*unit));
             float maxWidth=Mathf.Min(680,available.x-2*margin)*unit;
             float desired=NaturalWidth(prompt)+2*padding*unit;
             foreach(var label in labels)desired=Mathf.Max(desired,NaturalWidth(label)+(48+2*padding)*unit);
-            float width=Mathf.Min(maxWidth,Mathf.Max(340*unit,desired));
+            float width=Mathf.Min(maxWidth,Mathf.Max(480*unit,desired));
             float contentWidth=width-2*padding*unit;
+            header=Mathf.Max(header,WrappedHeight(questionStep,contentWidth)/unit+4);
             contentLayout.spacing=spacing*unit; contentLayout.padding=new RectOffset();
             var promptLayout=prompt.transform.parent.GetComponent<LayoutElement>();
             promptLayout.minHeight=0; promptLayout.preferredWidth=contentWidth;
             promptLayout.preferredHeight=WrappedHeight(prompt,contentWidth)+4*unit;
             float bodyHeight=promptLayout.preferredHeight+spacing*unit*options.Count;
             for(var i=0;i<labels.Count;i++){
-                float optionWidth=Mathf.Min(contentWidth,Mathf.Max(140*unit,NaturalWidth(labels[i])+48*unit));
+                float optionWidth=Mathf.Min(contentWidth,Mathf.Max(210*unit,NaturalWidth(labels[i])+60*readingScale*unit));
                 var item=options[i].GetComponent<LayoutElement>();
                 item.minHeight=buttonHeight*unit; item.preferredWidth=optionWidth; item.flexibleWidth=0;
-                item.preferredHeight=Mathf.Max(item.minHeight,WrappedHeight(labels[i],optionWidth-48*unit)+16*unit);
+                item.preferredHeight=Mathf.Max(item.minHeight,WrappedHeight(labels[i],optionWidth-48*readingScale*unit)+16*readingScale*unit);
                 bodyHeight+=item.preferredHeight;
-                labels[i].rectTransform.offsetMin=new Vector2(36,8)*unit;
-                labels[i].rectTransform.offsetMax=new Vector2(-12,-8)*unit;
+                labels[i].rectTransform.offsetMin=new Vector2(36,8)*readingScale*unit;
+                labels[i].rectTransform.offsetMax=new Vector2(-12,-8)*readingScale*unit;
                 var mark=(RectTransform)choiceMarks[i].transform;
-                mark.sizeDelta=Vector2.one*14*unit; mark.anchoredPosition=new Vector2(19,0)*unit;
+                mark.sizeDelta=Vector2.one*14*readingScale*unit; mark.anchoredPosition=new Vector2(19,0)*readingScale*unit;
                 choiceMarks[i].GetComponent<Outline>().effectDistance=new Vector2(1,-1)*unit;
-                float markUnit=14f/22*unit;
+                float markUnit=14f/22*readingScale*unit;
                 var shortStroke=(RectTransform)mark.GetChild(0);shortStroke.anchoredPosition=new Vector2(-4,-1)*markUnit;shortStroke.sizeDelta=new Vector2(3,7)*markUnit;
                 var longStroke=(RectTransform)mark.GetChild(1);longStroke.anchoredPosition=new Vector2(2,2)*markUnit;longStroke.sizeDelta=new Vector2(3,14)*markUnit;
             }
             float footerHeight=(helpHeight+8+buttonHeight+gap)*unit;
             float chrome=(2*padding+header+gap)*unit+footerHeight;
-            float height=Mathf.Min(Mathf.Min(640,available.y-2*margin)*unit,bodyHeight+chrome);
+            float height=Mathf.Min(Mathf.Min(740,available.y-2*margin)*unit,bodyHeight+chrome);
             paper.anchorMin=paper.anchorMax=Vector2.one*.5f;paper.sizeDelta=new Vector2(width,height);
             paperImage.pixelsPerUnitMultiplier=36/((phone?10:16)*unit);
             paperShadow.effectColor=new Color(0,0,0,phone?.22f:.28f);paperShadow.effectDistance=new Vector2(0,phone?-4:-8)*unit;
@@ -347,9 +356,9 @@ namespace DrForms.Prototype
             var heading=(RectTransform)questionStep.transform.parent;
             TopRect(heading,padding*unit,header*unit,padding*unit);
             TopRect(viewport,(padding+header+gap)*unit,Mathf.Max(44*unit,height-chrome),padding*unit);
-            footer.anchorMin=footer.anchorMax=new Vector2(1,0);footer.pivot=new Vector2(1,0);
-            footer.anchoredPosition=new Vector2(-padding,padding)*unit;
-            footer.sizeDelta=new Vector2(Mathf.Min(contentWidth,Mathf.Max(140*unit,NaturalWidth(submitLabel)+32*unit)),buttonHeight*unit);
+            footer.anchorMin=footer.anchorMax=new Vector2(.5f,0);footer.pivot=new Vector2(.5f,0);
+            footer.anchoredPosition=new Vector2(0,padding)*unit;
+            footer.sizeDelta=new Vector2(Mathf.Min(contentWidth,Mathf.Max(210*unit,NaturalWidth(submitLabel)+40*unit)),buttonHeight*unit);
             hint.anchorMin=new Vector2(0,0);hint.anchorMax=new Vector2(1,0);hint.pivot=new Vector2(.5f,0);
             hint.anchoredPosition=new Vector2(0,(padding+buttonHeight+8)*unit);hint.sizeDelta=new Vector2(-2*padding*unit,helpHeight*unit);
             LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);

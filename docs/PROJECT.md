@@ -115,7 +115,13 @@ splashes and glass-like synthesized sound replace the wand presentation; damage
 remains single-target. Sources and rights are in [ART_SOURCES.md](ART_SOURCES.md).
 
 The warm-ivory/deep-teal palette with restrained green/violet accents extends to
-HUD, controls, specimen equipment and locked/open exit indicators. The existing
-1024 shadow budget, three encounters, question/reward transactions, progression,
-controls and Safari recovery remain. Later rooms retain simpler environments.
-This is a local review milestone; hosting and pricing remain undecided.
+HUD, controls, specimen equipment and locked/open exit indicators. All three rooms
+share quiet laboratory tiles, rounded walls, door arches and peripheral tanks.
+The camera adapts its distance to portrait/landscape; characters remain readable
+in spacious rooms. The existing 1024 shadow budget, three encounters,
+question/reward transactions, progression, controls and Safari recovery remain.
+The centered manuscript uses Cormorant headings and Lato body text, with OFL notices
+included in the Web distribution. Reading text/controls target 1.5 times the
+preceding compact layout, adapt on small/short viewports and scroll above a fixed
+centered Submit. Build identifier: DRFORMS-LAB-MOTION-4. This is a local review
+milestone; hosting and pricing remain undecided.

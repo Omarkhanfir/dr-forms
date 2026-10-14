@@ -1,9 +1,10 @@
 # Dr.forms laboratory art provenance
 
-DRFORMS-MANUSCRIPT-2 extends the original Dr.forms scientist with an aged laboratory manuscript and newly authored combat motion. No purchases, paid-preview artwork, new packages, Unity upgrades, downloaded audio or image-generation assets are used.
+DRFORMS-LAB-MOTION-4 extends the original scientist with consistent laboratory rooms, responsive manuscript typography and corrected articulated motion. No purchases, paid-preview artwork, new packages, Unity upgrades, downloaded audio or image-generation assets are used.
 
 ## Approved reference inspection (2026-10-14)
 
+- User-supplied `C:/Users/21654/Downloads/archero.mp4` (51.7 seconds, 384x786, 30 fps): inspected chronological frames across the whole clip and consecutive combat frames. References: spacious overhead rooms, small readable actors, softly rounded architecture, low-contrast floors and distinct brief attacks. Direction only; no Archero artwork, audio, geometry or frames are shipped. Reference/evidence remain outside Git in `ArcheroPassEvidence`.
 - [Parchment kit](https://gamedeveloperstudio.itch.io/parchment-game-user-interface-kit): inspected actual public page previews in Chrome. Warm paper, worn framing and layered controls informed direction only. This is paid artwork; no purchase, preview extraction into project assets or asset-pack download.
 - [Medieval Battle UI](https://dribbble.com/shots/1725585-Medieval-Battle-Game-Ui-WIP): inspected the actual public image in its browser page. Rolled edges and layered framing informed restraint and depth; its artwork, icons and character were not copied.
 - [Movement study](https://kd_d4rk.artstation.com/projects/9BNDav): text accessible via web reader, but Chrome displays an Epic security check and the linked video embed returned no playable media. No visual/video comparison is claimed. Animation is independently authored to the requested movement/weight/anticipation requirements.
@@ -13,7 +14,9 @@ DRFORMS-MANUSCRIPT-2 extends the original Dr.forms scientist with an aged labora
 
 `Manuscript.png` is an original deterministic Pillow drawing from `Tools/Art/build_manuscript.py`: irregular silhouette, quiet ivory grain, edge wear and fine corner ink marks. Reproduce with `python Tools/Art/build_manuscript.py Assets/SourceFiles/Prototype/Resources/Courtyard` while preserving metadata.
 
-The heading alone uses unmodified **Cormorant Garamond SemiBold**, by the Cormorant Project Authors, from [the author's TTF](https://github.com/CatharsisFonts/Cormorant/blob/016784836d2ad47bc4c62b7f504a0a5875d85aeb/fonts/ttf/CormorantGaramond-SemiBold.ttf). The downloaded SIL Open Font License explicitly permits use, embedding and redistribution, including commercial products. Licence/copyright retained in [Cormorant-OFL.txt](licenses/Cormorant-OFL.txt). Project filename is `ManuscriptHeading.ttf`; font contents and internal names are unchanged. Body and answer text retain Unity's built-in font. Asset byte sizes and SHA-256 are in the shipped-assets manifest.
+The heading uses unmodified **Cormorant Garamond SemiBold**, by the Cormorant Project Authors, from [the author's TTF](https://github.com/CatharsisFonts/Cormorant/blob/016784836d2ad47bc4c62b7f504a0a5875d85aeb/fonts/ttf/CormorantGaramond-SemiBold.ttf). Licence/copyright retained in [Cormorant-OFL.txt](licenses/Cormorant-OFL.txt). Project filename is `ManuscriptHeading.ttf`; font contents and internal names are unchanged.
+
+Question prompts, answers, help and Submit use unmodified **Lato Regular**, by Lukasz Dziedzic, from [Google Fonts' pinned TTF](https://github.com/google/fonts/blob/5d3b76120a319730fda218cc7410174a462b32cb/ofl/lato/Lato-Regular.ttf), saved as `ManuscriptBody.ttf`. Licence/copyright retained in [Lato-OFL.txt](licenses/Lato-OFL.txt); only trailing whitespace/line endings are normalized in this notice. The download manifest retains the original downloaded-byte hash. Both fonts use SIL OFL 1.1, which permits embedding and commercial redistribution with the notice. Both notices are copied to each Web distribution. Latin accented glyphs remain embedded; the development long-content fixture exercises French/Spanish accents. Asset sizes/hashes are in the shipped-assets manifest.
 
 ## Current original assets
 
@@ -21,8 +24,8 @@ The heading alone uses unmodified **Cormorant Garamond SemiBold**, by the Cormor
 | --- | --- | --- |
 | Hero.fbx | Tools/Art/build_lab_characters.py | Original scientist: ivory coat, teal gloves and boots, oversized goggles, swept white hair, violet satchel with coloured flasks. Original weighted skeleton and ten authored actions, including stopping/turning and independent arm throwing. |
 | Guardian.fbx / Acolyte.fbx | Same script | Original green Moss specimen and violet Bloom specimen, collars, chemical cores, eyes and plant growth. Existing pursuit/ranged behavior remains separate. |
-| Room.fbx / Gate.fbx | Tools/Art/build_courtyard.py | Original softened stone/tile courtyard, perimeter pipes, tanks, specimen vessels and plants, laboratory lintel/flask sign and teal metal shutters. First-room environment showcase; later environments remain simpler. |
-| Panel.png / TouchRing.png / StoneGrain.png / Spark.png | Tools/Art/build_surface.py | Original deterministic Pillow drawings; ivory/teal interface rims and procedural worn stone. |
+| Room.fbx / Gate.fbx | Tools/Art/build_lab_rooms.py | Original low rounded walls, quiet tiled floor, laboratory tanks outside walking paths, rounded door arch, flask sign, navigation chevrons and teal shutters. Shared by all three rooms. Earlier courtyard generator is retained as historical source. |
+| Panel.png / AnswerPanel.png / AnswerFocus.png / TouchRing.png / StoneGrain.png / Spark.png | Tools/Art/build_surface.py | Original deterministic Pillow drawings; ivory/teal interface rims, rounded neutral answer/focus masks and procedural worn stone. |
 | Flask meshes, particles, trails and contact shadows | Runtime prototype code | Original collision-free meshes and bounded reusable effects. Decorative splash effects apply no damage. |
 | Throw and glass-impact sounds | Assets/Plugins/WebGL/PrototypeAudio.jslib | Original Web Audio synthesis: short falling throw tone and high glass-like impact notes. Eight-voice cap and existing persistent mute. Web-only; no external recordings. |
 
@@ -34,11 +37,11 @@ Use existing Blender 5.0.1 and Python/Pillow, preserving all existing .meta file
 
 ```powershell
 & 'C:/Program Files/Blender Foundation/Blender 5.0/blender.exe' -b -t 2 -P Tools/Art/build_lab_characters.py -- C:/Users/21654/DrFormsGame/Assets/SourceFiles/Prototype/Resources/Courtyard
-& 'C:/Program Files/Blender Foundation/Blender 5.0/blender.exe' -b -t 2 -P Tools/Art/build_courtyard.py -- C:/Users/21654/DrFormsGame/Assets/SourceFiles/Prototype/Resources/Courtyard
+& 'C:/Program Files/Blender Foundation/Blender 5.0/blender.exe' -b -t 2 -P Tools/Art/build_lab_rooms.py -- C:/Users/21654/DrFormsGame/Assets/SourceFiles/Prototype/Resources/Courtyard
 python Tools/Art/build_surface.py Assets/SourceFiles/Prototype/Resources/Courtyard
 ```
 
-The scoped model importer retains Legacy skeletal animation and authored material slots. Character collision/movement remains in the existing controller. Locomotion blends distinct idle/walk/run/stop poses, scales playback with measured movement, and adds an upper-body turn pose. The independent right-arm/coat throw retains a 0.10-second scaled-time hand release. Boots have foot bones: an offline two-segment leg solve gives a level stance and lifted swing, with linear stance travel; no runtime ground IK or collision correction. Coat tails, elbows, knees and satchel have bones; no cloth simulation, facial animation or physically simulated glass.
+The scoped model importer retains Legacy skeletal animation and authored material slots. Character collision/movement remains in the existing controller. Locomotion blends distinct idle/walk/run/stop poses, scales playback with actual displacement and authored stride distance, and adds an upper-body turn pose. Corrected root height uses the bone's local Y (world up), rather than local Z (forward/back). Shorter coat tails and teal boots expose leg articulation. The independent right-arm/coat throw retains a 0.10-second scaled-time hand release. The torso aims while moving legs face travel; skeletal poses update before projectile release, which hides the held flask immediately. Boots have foot bones: an offline two-segment leg solve gives a level stance and lifted swing, with linear stance travel; no runtime ground IK or collision correction. Coat tails, elbows, knees and satchel have bones; no cloth simulation, facial animation or physically simulated glass. Whole-rig tilt/recoil offsets have been removed; hits use articulated reactions.
 
 Chaser attack anticipation/recovery overlays its moving upper body. The slower ranged specimen prepares across the unchanged 1.3-second telegraph, then releases/recoveries visually while the authoritative enemy controller spawns one bolt. Suspension discards ranged preparation so it cannot release a stale bolt on resume. Hits use a short non-restarting additive torso/head recoil and a directional rig offset without moving controllers or altering damage/cooldowns. Impact damage, number, sound and splash originate from the same projectile arrival transaction; presentation applies no damage. Both specimens have short defeat poses, sampled in unscaled time so a question transition can finish them.
 
