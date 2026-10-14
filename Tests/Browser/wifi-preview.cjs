@@ -8,6 +8,8 @@ const port = Number(process.env.DRFORMS_PREVIEW_PORT || 8765);
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript',
   '.wasm': 'application/wasm', '.data': 'application/octet-stream',
   '.json': 'application/json', '.css': 'text/css', '.png': 'image/png',
+  '.mp4': 'video/mp4', '.webm': 'video/webm',
+  '.txt': 'text/plain; charset=utf-8',
   '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
 const server = http.createServer((req, res) => {
   if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); return res.end(); }
@@ -43,9 +45,23 @@ const server = http.createServer((req, res) => {
   if (file.endsWith('.br')) res.setHeader('Content-Encoding', 'br');
   res.setHeader('Content-Length', stat.size);
   res.setHeader('Cache-Control', 'no-store');
+  let start = 0, end = stat.size - 1;
+  if (/\.(mp4|webm)$/.test(file)) {
+    res.setHeader('Accept-Ranges', 'bytes');
+    if (req.headers.range) {
+      const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range);
+      if (range && range[1]) { start = Number(range[1]); end = range[2] ? Math.min(end, Number(range[2])) : end; }
+      else if (range && range[2]) start = Math.max(0, stat.size - Number(range[2]));
+      else start = -1;
+      if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || start > end) {
+        res.writeHead(416, { 'Content-Range': `bytes */${stat.size}`, 'Content-Length': 0 }); return res.end();
+      }
+      res.writeHead(206, { 'Content-Range': `bytes ${start}-${end}/${stat.size}`, 'Content-Length': end-start+1 });
+    }
+  }
   if (req.method === 'HEAD') return res.end();
   if (req.method !== 'GET') { res.writeHead(405); return res.end(); }
-  const stream = fs.createReadStream(file);
+  const stream = fs.createReadStream(file, /\.(mp4|webm)$/.test(file) ? {start,end} : undefined);
   stream.on('error', () => res.destroy());
   stream.pipe(res);
 });

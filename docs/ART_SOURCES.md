@@ -1,12 +1,25 @@
 # Dr.forms laboratory art provenance
 
-The DRFORMS-LAB-1 milestone replaces the knight, skeletons and weapons with original Dr.forms character geometry and authored skeletal animation. No purchases, new packages, Unity upgrades, downloaded audio or image-generation assets are used.
+DRFORMS-MANUSCRIPT-2 extends the original Dr.forms scientist with an aged laboratory manuscript and newly authored combat motion. No purchases, paid-preview artwork, new packages, Unity upgrades, downloaded audio or image-generation assets are used.
+
+## Approved reference inspection (2026-10-14)
+
+- [Parchment kit](https://gamedeveloperstudio.itch.io/parchment-game-user-interface-kit): inspected actual public page previews in Chrome. Warm paper, worn framing and layered controls informed direction only. This is paid artwork; no purchase, preview extraction into project assets or asset-pack download.
+- [Medieval Battle UI](https://dribbble.com/shots/1725585-Medieval-Battle-Game-Ui-WIP): inspected the actual public image in its browser page. Rolled edges and layered framing informed restraint and depth; its artwork, icons and character were not copied.
+- [Movement study](https://kd_d4rk.artstation.com/projects/9BNDav): text accessible via web reader, but Chrome displays an Epic security check and the linked video embed returned no playable media. No visual/video comparison is claimed. Animation is independently authored to the requested movement/weight/anticipation requirements.
+- Reference-page screenshots are outside Git under `C:/Users/21654/DrFormsGame-WebVerification/ManuscriptResearch`.
+
+## Manuscript asset rights
+
+`Manuscript.png` is an original deterministic Pillow drawing from `Tools/Art/build_manuscript.py`: irregular silhouette, quiet ivory grain, edge wear and fine corner ink marks. Reproduce with `python Tools/Art/build_manuscript.py Assets/SourceFiles/Prototype/Resources/Courtyard` while preserving metadata.
+
+The heading alone uses unmodified **Cormorant Garamond SemiBold**, by the Cormorant Project Authors, from [the author's TTF](https://github.com/CatharsisFonts/Cormorant/blob/016784836d2ad47bc4c62b7f504a0a5875d85aeb/fonts/ttf/CormorantGaramond-SemiBold.ttf). The downloaded SIL Open Font License explicitly permits use, embedding and redistribution, including commercial products. Licence/copyright retained in [Cormorant-OFL.txt](licenses/Cormorant-OFL.txt). Project filename is `ManuscriptHeading.ttf`; font contents and internal names are unchanged. Body and answer text retain Unity's built-in font. Asset byte sizes and SHA-256 are in the shipped-assets manifest.
 
 ## Current original assets
 
 | Asset | Authoring source | Rights/provenance |
 | --- | --- | --- |
-| Hero.fbx | Tools/Art/build_lab_characters.py | Original scientist: ivory coat, teal gloves and boots, oversized goggles, swept white hair, violet satchel with coloured flasks. Original weighted skeleton and eight authored actions. |
+| Hero.fbx | Tools/Art/build_lab_characters.py | Original scientist: ivory coat, teal gloves and boots, oversized goggles, swept white hair, violet satchel with coloured flasks. Original weighted skeleton and ten authored actions, including stopping/turning and independent arm throwing. |
 | Guardian.fbx / Acolyte.fbx | Same script | Original green Moss specimen and violet Bloom specimen, collars, chemical cores, eyes and plant growth. Existing pursuit/ranged behavior remains separate. |
 | Room.fbx / Gate.fbx | Tools/Art/build_courtyard.py | Original softened stone/tile courtyard, perimeter pipes, tanks, specimen vessels and plants, laboratory lintel/flask sign and teal metal shutters. First-room environment showcase; later environments remain simpler. |
 | Panel.png / TouchRing.png / StoneGrain.png / Spark.png | Tools/Art/build_surface.py | Original deterministic Pillow drawings; ivory/teal interface rims and procedural worn stone. |
@@ -25,7 +38,9 @@ Use existing Blender 5.0.1 and Python/Pillow, preserving all existing .meta file
 python Tools/Art/build_surface.py Assets/SourceFiles/Prototype/Resources/Courtyard
 ```
 
-The scoped model importer retains Legacy skeletal animation and authored material slots. Character collision/movement remains in the existing controller. Locomotion blends idle/walk/run, scales playback with measured movement, and uses independent right-arm throw animation with a 0.10-second scaled-time hand release. Coat tails, elbows and knees have bones; there is no cloth simulation, facial animation, IK foot planting or physically simulated glass.
+The scoped model importer retains Legacy skeletal animation and authored material slots. Character collision/movement remains in the existing controller. Locomotion blends distinct idle/walk/run/stop poses, scales playback with measured movement, and adds an upper-body turn pose. The independent right-arm/coat throw retains a 0.10-second scaled-time hand release. Boots have foot bones: an offline two-segment leg solve gives a level stance and lifted swing, with linear stance travel; no runtime ground IK or collision correction. Coat tails, elbows, knees and satchel have bones; no cloth simulation, facial animation or physically simulated glass.
+
+Chaser attack anticipation/recovery overlays its moving upper body. The slower ranged specimen prepares across the unchanged 1.3-second telegraph, then releases/recoveries visually while the authoritative enemy controller spawns one bolt. Suspension discards ranged preparation so it cannot release a stale bolt on resume. Hits use a short non-restarting additive torso/head recoil and a directional rig offset without moving controllers or altering damage/cooldowns. Impact damage, number, sound and splash originate from the same projectile arrival transaction; presentation applies no damage. Both specimens have short defeat poses, sampled in unscaled time so a question transition can finish them.
 
 ## Retained historical third-party sources
 

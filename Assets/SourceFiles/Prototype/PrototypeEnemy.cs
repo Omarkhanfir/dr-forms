@@ -19,6 +19,9 @@ namespace DrForms.Prototype
         public bool IsRanged {get;private set;}
         public bool MageAppearance { get; private set; }
         public bool Telegraphing => windupUntil>0;
+        public float CastPreparation => Telegraphing ? Mathf.Clamp01(1-(windupUntil-Time.time)/1.3f) : 0;
+        public float ContactPreparation {get;private set;}
+        public bool AttackAnticipating => !IsRanged && ContactPreparation>0;
         public Vector3 LockedAim => lockedAim;
         public int RangedShots {get;private set;}
         public int ContactHits {get;private set;}
@@ -42,7 +45,7 @@ namespace DrForms.Prototype
             IsRanged=ranged;speed=ranged?1.1f:Mathf.Min(speed,1.8f);
             contactDamage=Mathf.Min(contactDamage,10);contactCooldown=Mathf.Max(contactCooldown,1.5f);
             nextCast=Time.time+3.5f;
-            health.SetDisplayName(MageAppearance ? "Bloom specimen" : "Moss specimen");
+            health.SetDisplayName(IsRanged ? "Bloom specimen" : "Moss specimen");
             if(!ranged)return;
             var obj=new GameObject("Amber Aim Warning");obj.transform.SetParent(transform,false);
             warning=obj.AddComponent<LineRenderer>();warning.useWorldSpace=true;warning.positionCount=2;
@@ -51,9 +54,14 @@ namespace DrForms.Prototype
         }
         private void Update()
         {
-            if(player==null || player.IsDefeated || health.Health<=0 || controls==null || !controls.CanPlay){if(warning!=null && health.Health<=0)warning.enabled=false;return;}
+            if(player==null || player.IsDefeated || health.Health<=0 || controls==null || !controls.CanPlay){
+                // A suspended preparation must not release a stale attack on return.
+                windupUntil=0;ContactPreparation=0;if(warning!=null)warning.enabled=false;return;
+            }
             if (player.transform.position.z < roomIndex * 24 - 10 || player.transform.position.z > roomIndex * 24 + 10) return;
             var delta=player.transform.position-transform.position;delta.y=0;float distance=delta.magnitude;
+            ContactPreparation = !player.GraceActive && Time.time>=nextContact-.28f
+                ? Mathf.Clamp01(1-(distance-contactDistance)/Mathf.Max(.01f,speed*.28f)) : 0;
             Vector3 horizontal=Vector3.zero;
             float stop=IsRanged?4.8f:contactDistance*.9f;
             if(distance>stop && Time.deltaTime>0 && !Telegraphing)

@@ -10,7 +10,8 @@ def build(name):
   m=bpy.data.materials.new(k);m.diffuse_color=c;mats[k]=m
  bpy.ops.object.armature_add();rig=bpy.context.object;rig.name='LaboratorySkeleton'
  bpy.ops.object.mode_set(mode='EDIT');rig.data.edit_bones.remove(rig.data.edit_bones[0])
- specs={'Root':((0,0,0),(0,0,.8),None),'Body':((0,0,.8),(0,0,1.6),'Root'),'Head':((0,0,1.6),(0,0,2.3),'Body'),'Arm.L':((-.43,0,1.5),(-.43,0,1.23),'Body'),'Arm.R':((.43,0,1.5),(.43,0,1.23),'Body'),'Forearm.L':((-.43,0,1.23),(-.43,0,.95),'Arm.L'),'Forearm.R':((.43,0,1.23),(.43,0,.95),'Arm.R'),'Leg.L':((-.22,0,.8),(-.22,0,.44),'Root'),'Leg.R':((.22,0,.8),(.22,0,.44),'Root'),'Shin.L':((-.22,0,.44),(-.22,0,.12),'Leg.L'),'Shin.R':((.22,0,.44),(.22,0,.12),'Leg.R'),'Coat.L':((-.22,.08,1.0),(-.22,.08,.65),'Body'),'Coat.R':((.22,.08,1.0),(.22,.08,.65),'Body'),'handslot.r':((.43,0,.95),(.43,0,.8),'Forearm.R')}
+ specs={'Root':((0,0,0),(0,0,.8),None),'Body':((0,0,.8),(0,0,1.6),'Root'),'Head':((0,0,1.6),(0,0,2.3),'Body'),'Arm.L':((-.43,0,1.5),(-.43,0,1.23),'Body'),'Arm.R':((.43,0,1.5),(.43,0,1.23),'Body'),'Forearm.L':((-.43,0,1.23),(-.43,0,.95),'Arm.L'),'Forearm.R':((.43,0,1.23),(.43,0,.95),'Arm.R'),'Leg.L':((-.22,0,.8),(-.22,0,.44),'Root'),'Leg.R':((.22,0,.8),(.22,0,.44),'Root'),'Shin.L':((-.22,0,.44),(-.22,0,.12),'Leg.L'),'Shin.R':((.22,0,.44),(.22,0,.12),'Leg.R'),'Coat.L':((-.22,.08,1.0),(-.22,.08,.65),'Body'),'Coat.R':((.22,.08,1.0),(.22,.08,.65),'Body'),'Satchel':((-.47,.05,1.12),(-.47,.05,.83),'Body'),'handslot.r':((.43,0,.95),(.43,0,.8),'Forearm.R')}
+ for side,x in [('L',-.22),('R',.22)]:specs['Foot.'+side]=((x,0,.12),(x,-.25,.12),'Shin.'+side)
  for k,(a,b,parent) in specs.items():
   bone=rig.data.edit_bones.new(k);bone.head=a;bone.tail=b
   if parent:bone.parent=rig.data.edit_bones[parent]
@@ -36,8 +37,8 @@ def build(name):
   shape('Nose',(0,-.35,1.88),(.085,.13,.10),'Skin','Head')
   for i in range(7):
    x=(i-3)*.12;shape('Wild swept hair',(x,.15,2.30+(.12 if i%2 else 0)),(.12,.23,.20),'Hair','Head')
-  shape('Flask satchel',(-.47,.05,1.0),(.18,.27,.23),'Violet')
-  for y,c in [(-.15,'Green'),(.12,'Glass')]:shape('Satchel flask',(-.57,y,1.20),(.10,.10,.14),c)
+  shape('Flask satchel',(-.47,.05,1.0),(.18,.27,.23),'Violet','Satchel')
+  for y,c in [(-.15,'Green'),(.12,'Glass')]:shape('Satchel flask',(-.57,y,1.20),(.10,.10,.14),c,'Satchel')
  else:
   c='Green' if name=='Guardian' else 'Violet'
   shape('Specimen body',(0,0,1.13),(.50,.33,.56),c,box=name=='Guardian')
@@ -50,7 +51,7 @@ def build(name):
  for side,x in [('L',-.22),('R',.22)]:
   shape('Trouser '+side,(x,0,.64),(.16,.18,.20),'Teal','Leg.'+side)
   shape('Lower trouser '+side,(x,0,.34),(.14,.16,.18),'Teal','Shin.'+side)
-  shape('Boot '+side,(x,-.09,.15),(.19,.27,.16),'Black','Shin.'+side,True)
+  shape('Boot '+side,(x,-.09,.15),(.19,.27,.16),'Black','Foot.'+side,True)
  for side,x in [('L',-.48),('R',.48)]:
   shape('Sleeve '+side,(x,0,1.36),(.16,.18,.17),'Ivory' if name=='Hero' else ('Green' if name=='Guardian' else 'Violet'),'Arm.'+side)
   shape('Cuff '+side,(x,0,1.10),(.14,.16,.17),'Ivory' if name=='Hero' else 'Teal','Forearm.'+side)
@@ -60,24 +61,99 @@ def build(name):
  bpy.context.view_layer.objects.active=parts[0];bpy.ops.object.join();body=bpy.context.object;body.name='DrForms_'+name
  mod=body.modifiers.new('Skin','ARMATURE');mod.object=rig;body.parent=rig
  rig.animation_data_create()
- for action_name,frames in [('Idle',60),('Running_A',24),('Walking_A',36),('Spellcast_Shoot',15),('Spellcasting',60),('Hit_A',12),('Death_A',30),('1H_Melee_Attack_Slice_Horizontal',15)]:
+ for action_name,frames in [('Idle',120),('Running_A',32),('Walking_A',48),('Stopping',18),('Turning',24),('Spellcast_Shoot',15),('Spellcasting',78),('Hit_A',12),('Death_A',30),('1H_Melee_Attack_Slice_Horizontal',24)]:
   action=bpy.data.actions.new(action_name);rig.animation_data.action=action
-  for f in range(0,frames+1,3):
+  for f in sorted(set(range(0,frames+1,2)) | {frames,6}):
    t=f/frames;wave=math.sin(t*math.tau)
    for bone in rig.pose.bones:
     bone.rotation_mode='XYZ';bone.rotation_euler=(0,0,0);bone.location=(0,0,0)
    if action_name in ['Running_A','Walking_A']:
+    running=action_name=='Running_A'
+    stride_width=.34 if running else .23
+    if name=='Acolyte':stride_width*=.7
+    bob=(1-math.cos(t*math.tau*2))*(.032 if running else .014)
+    root_height=(-.16 if running else -.04)+bob
+    rig.pose.bones['Root'].location.z=root_height
     for side,sign in [('L',1),('R',-1)]:
-     rig.pose.bones['Leg.'+side].rotation_euler.x=wave*.65*sign;rig.pose.bones['Shin.'+side].rotation_euler.x=-max(0,-wave*sign)*.75;rig.pose.bones['Arm.'+side].rotation_euler.x=-wave*.4*sign;rig.pose.bones['Coat.'+side].rotation_euler.x=wave*.10*sign
-    rig.pose.bones['Root'].location.z=abs(wave)*.055;rig.pose.bones['Body'].rotation_euler.z=wave*.045
-   elif action_name in ['Spellcast_Shoot','1H_Melee_Attack_Slice_Horizontal']:
-    # .10 second release in a .25 second clip: arm moves from back to forward.
-    angle= .9*t/.25 if t<.25 else .9-(t-.25)/.15*1.8 if t<.4 else -.9-(t-.4)/.25*.4 if t<.65 else -1.3+(t-.65)/.35*1.3
-    rig.pose.bones['Arm.R'].rotation_euler.x=angle;rig.pose.bones['Forearm.R'].rotation_euler.x=max(0,math.sin(t*math.pi*2))*.75;rig.pose.bones['Body'].rotation_euler.z=math.sin(t*math.pi)*.10
-   elif action_name=='Hit_A':rig.pose.bones['Body'].rotation_euler.x=-math.sin(t*math.pi)*.22
-   elif action_name=='Death_A':rig.pose.bones['Root'].rotation_euler.x=t*1.45
+     phase=(t+(0 if side=='L' else .5))%1
+     # Linear stance travel, eased airborne return and bent swing knee.
+     stride=-1+4*phase if phase<.5 else math.cos((phase-.5)*math.tau)
+     knee=0 if phase<.5 else math.sin((phase-.5)*math.tau)
+     asym=1.2 if name=='Guardian' and side=='L' else .88 if name=='Guardian' else 1
+     # Authored two-segment solve: level boot, constant stance height,
+     # linear backward stance travel and a lifted swing arc. No runtime IK.
+     foot_y=stride*stride_width*(1.05 if name=='Guardian' and side=='L' else 1)
+     down=.68+root_height-knee*(.21 if running else .13)
+     bend=-math.acos(max(-1,min(1,(foot_y*foot_y+down*down-.36**2-.32**2)/(2*.36*.32))))
+     hip=math.atan2(foot_y,down)-math.atan2(.32*math.sin(bend),.36+.32*math.cos(bend))
+     rig.pose.bones['Leg.'+side].rotation_euler.x=hip
+     rig.pose.bones['Shin.'+side].rotation_euler.x=bend
+     rig.pose.bones['Foot.'+side].rotation_euler.x=-(hip+bend)
+     rig.pose.bones['Arm.'+side].rotation_euler.x=-stride*(.50 if running else .24)
+     rig.pose.bones['Forearm.'+side].rotation_euler.x=-.30 if running else -.12
+     rig.pose.bones['Coat.'+side].rotation_euler.x=math.sin(t*math.tau-.65)*.16*sign
+    rig.pose.bones['Root'].location.x=wave*(.055 if name!='Acolyte' else .025)
+    rig.pose.bones['Body'].rotation_euler.x=.16 if running else .04
+    rig.pose.bones['Body'].rotation_euler.y=wave*(.12 if name=='Guardian' else .065)
+    rig.pose.bones['Body'].rotation_euler.z=wave*.09
+    rig.pose.bones['Satchel'].rotation_euler.x=math.sin(t*math.tau-.8)*.18
+    rig.pose.bones['Head'].rotation_euler.z=-wave*.04
+   elif action_name=='Stopping':
+    pulse=math.sin(t*math.pi)*(1-t)
+    rig.pose.bones['Root'].location.z=-pulse*.10
+    rig.pose.bones['Body'].rotation_euler.x=-pulse*.32
+    rig.pose.bones['Leg.L'].rotation_euler.x=pulse*.40
+    rig.pose.bones['Shin.L'].rotation_euler.x=-pulse*.55
+    rig.pose.bones['Arm.L'].rotation_euler.x=-pulse*.38
+    rig.pose.bones['Arm.R'].rotation_euler.x=-pulse*.30
+    rig.pose.bones['Satchel'].rotation_euler.x=math.sin(t*math.pi*2)*.18
+   elif action_name=='Turning':
+    pulse=math.sin(t*math.tau)
+    rig.pose.bones['Root'].location.z=-pulse*.04
+    rig.pose.bones['Body'].rotation_euler.z=pulse*.18
+    rig.pose.bones['Head'].rotation_euler.z=pulse*.24
+    rig.pose.bones['Leg.L'].rotation_euler.x=pulse*.28
+    rig.pose.bones['Shin.L'].rotation_euler.x=-pulse*.5
+    rig.pose.bones['Satchel'].rotation_euler.z=-pulse*.20
+   elif action_name=='Spellcast_Shoot':
+    # Exact frame 6 / .10s release. Back cock -> extension -> recoil -> settle.
+    keys=[(0,0),(.24,.95),(.40,-1.05),(.64,-1.38),(1,0)]
+    angle=0
+    for (a,av),(b,bv) in zip(keys,keys[1:]):
+     if a<=t<=b:angle=av+(bv-av)*(t-a)/(b-a);break
+    rig.pose.bones['Arm.R'].rotation_euler.x=angle
+    rig.pose.bones['Arm.R'].rotation_euler.z=-math.sin(t*math.pi)*.26
+    rig.pose.bones['Forearm.R'].rotation_euler.x=-math.sin(min(t/.4,1)*math.pi)*.85
+    rig.pose.bones['Coat.R'].rotation_euler.x=math.sin(t*math.pi)*.18
+   elif action_name=='Spellcasting':
+    prepare=min(1,t/.68);release=max(0,min(1,(t-.68)/.16));recover=max(0,(t-.84)/.16)
+    rig.pose.bones['Body'].rotation_euler.x=-prepare*.14+release*.26-recover*.12
+    for side in ['L','R']:
+     rig.pose.bones['Arm.'+side].rotation_euler.x=-prepare*.8-release*.45+recover*1.25
+     rig.pose.bones['Forearm.'+side].rotation_euler.x=-prepare*.7+release*.6+recover*.1
+    rig.pose.bones['Head'].rotation_euler.x=prepare*.12-release*.17+recover*.05
+   elif action_name=='1H_Melee_Attack_Slice_Horizontal':
+    pulse=math.sin(t*math.pi)
+    rig.pose.bones['Body'].rotation_euler.x=(-.25 if t<.55 else .38)*pulse
+    rig.pose.bones['Arm.R'].rotation_euler.x=(-.7 if t>.55 else .6)*pulse
+    rig.pose.bones['Head'].rotation_euler.x=pulse*.12
+   elif action_name=='Hit_A':
+    rig.pose.bones['Body'].rotation_euler.x=-math.sin(t*math.pi)*.25
+    rig.pose.bones['Head'].rotation_euler.x=math.sin(t*math.pi)*.18
+   elif action_name=='Death_A':
+    collapse=max(0,(t-.18)/.82)
+    rig.pose.bones['Body'].rotation_euler.x=math.sin(t*math.pi)*.34
+    rig.pose.bones['Root'].rotation_euler.x=collapse*1.45
+    rig.pose.bones['Root'].rotation_euler.y=math.sin(t*math.pi)*(.22 if name=='Guardian' else -.22)
+    rig.pose.bones['Arm.L'].rotation_euler.z=math.sin(t*math.pi)*.48
+    rig.pose.bones['Arm.R'].rotation_euler.z=-math.sin(t*math.pi)*.48
+    rig.pose.bones['Shin.L'].rotation_euler.x=-math.sin(t*math.pi)*.5
    else:
-    rig.pose.bones['Body'].rotation_euler.x=wave*.025;rig.pose.bones['Head'].rotation_euler.z=wave*.055
+    rig.pose.bones['Body'].rotation_euler.x=wave*.025
+    rig.pose.bones['Head'].rotation_euler.z=wave*(.09 if name=='Guardian' else .04)
+    rig.pose.bones['Arm.L'].rotation_euler.x=wave*.055
+    rig.pose.bones['Arm.R'].rotation_euler.x=-wave*.055
+    rig.pose.bones['Satchel'].rotation_euler.z=math.sin(t*math.tau-.5)*.035
    for bone in rig.pose.bones:
     bone.keyframe_insert('rotation_euler',frame=f);bone.keyframe_insert('location',frame=f)
  bpy.context.scene.render.fps=60;rig.animation_data.action=None

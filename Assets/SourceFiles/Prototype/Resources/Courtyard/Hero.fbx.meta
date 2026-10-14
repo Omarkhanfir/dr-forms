@@ -36,7 +36,7 @@ ModelImporter:
       takeName: LaboratorySkeleton|1H_Melee_Attack_Slice_Horizontal
       internalID: 7720201653481763260
       firstFrame: 0
-      lastFrame: 15
+      lastFrame: 24
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -123,7 +123,7 @@ ModelImporter:
       takeName: LaboratorySkeleton|Idle
       internalID: -1795733018208546832
       firstFrame: 0
-      lastFrame: 60
+      lastFrame: 120
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -152,7 +152,7 @@ ModelImporter:
       takeName: LaboratorySkeleton|Running_A
       internalID: 8988595645327708759
       firstFrame: 0
-      lastFrame: 24
+      lastFrame: 32
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -210,7 +210,65 @@ ModelImporter:
       takeName: LaboratorySkeleton|Spellcasting
       internalID: 6809919984988539370
       firstFrame: 0
-      lastFrame: 60
+      lastFrame: 78
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000u
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: LaboratorySkeleton|Stopping
+      takeName: LaboratorySkeleton|Stopping
+      internalID: -3982174272862813680
+      firstFrame: 0
+      lastFrame: 18
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000u
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: LaboratorySkeleton|Turning
+      takeName: LaboratorySkeleton|Turning
+      internalID: 7321753554389695029
+      firstFrame: 0
+      lastFrame: 24
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -239,7 +297,7 @@ ModelImporter:
       takeName: LaboratorySkeleton|Walking_A
       internalID: 2365703888575458706
       firstFrame: 0
-      lastFrame: 36
+      lastFrame: 48
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

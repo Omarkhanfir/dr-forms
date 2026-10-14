@@ -29,8 +29,8 @@ namespace DrForms.Prototype
             transform.position=Vector3.Lerp(flight,target.transform.position,progress)+Vector3.up*(Mathf.Sin(progress*Mathf.PI)*.45f);
             transform.Rotate(0,0,240*Time.deltaTime);
             if((transform.position-target.transform.position).sqrMagnitude>.01f)return;
-            var destination=target;var source=owner;Finish(); // Transaction closes before damage.
-            destination.TakeDamage(damage);if(source!=null)source.HitApplied();
+            var destination=target;var source=owner;var direction=destination.transform.position-flight;Finish(); // Transaction closes before damage.
+            destination.TakeDamage(damage,direction);if(source!=null)source.HitApplied();
         }
         public void Cancel()=>Finish();
         private void Finish()

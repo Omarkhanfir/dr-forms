@@ -118,6 +118,11 @@ public static class GamePrototypeBuild
         Debug.Log("PROTOTYPE_BUILD_RESULT: " + report.summary.result + "; errors=" + report.summary.totalErrors
             + "; warnings=" + report.summary.totalWarnings + "; bytes=" + report.summary.totalSize);
         if (report.summary.result != BuildResult.Succeeded) throw new InvalidOperationException("Prototype build failed.");
+        // The embedded manuscript font retains its redistribution notice beside the player.
+        var fontNotice = Path.Combine(project, "docs", "licenses", "Cormorant-OFL.txt");
+        var notices = Path.Combine(output, "ThirdPartyNotices");
+        Directory.CreateDirectory(notices);
+        File.Copy(fontNotice, Path.Combine(notices, "Cormorant-OFL.txt"), true);
     }
 
     public static void AddQuestionsAndBuild()

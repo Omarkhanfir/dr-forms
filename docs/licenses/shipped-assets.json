@@ -1,8 +1,8 @@
 [
   {
     "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Acolyte.fbx",
-    "bytes": 983004,
-    "sha256": "15e6d62053bd180a6601796a70a96d7b81767b443d26ad05aa4113f5ba5aa0b3",
+    "bytes": 1504828,
+    "sha256": "9fea5929f024dfc3d8a6ddf7192469dc07b896d8743fb25586fb649882910e27",
     "licence": "Original Dr.forms project asset (replaces historical KayKit character)"
   },
   {
@@ -31,14 +31,14 @@
   },
   {
     "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Guardian.fbx",
-    "bytes": 982076,
-    "sha256": "455c4059721de8fd2a904c57ce6415296155cdab49cd1f2c28a93c2563517e65",
+    "bytes": 1503868,
+    "sha256": "a2e158cca2399a5be240078f65f15314e229577ca2438ff3b2b743864f2d1ac5",
     "licence": "Original Dr.forms project asset (replaces historical KayKit character)"
   },
   {
     "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Hero.fbx",
-    "bytes": 1018380,
-    "sha256": "5534c68b69364b9a02949b9de3b942236b9a83c97fb2c275fc1135ea8e2e1904",
+    "bytes": 1540444,
+    "sha256": "84feb033eec82708cc94d0164832ea941b187804c3098ec7d6bd4ef026c0bff4",
     "licence": "Original Dr.forms project asset (replaces historical KayKit character)"
   },
   {
@@ -82,5 +82,19 @@
     "bytes": 23516,
     "sha256": "f4c563572a1ed37ef88521cd904c5634632642eb3c4e0d80b7db1e5362ab7b38",
     "licence": "KayKit CC0"
+  },
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/Manuscript.png",
+    "bytes": 188747,
+    "sha256": "5a3ecad817a6b3a5a893a39fb2865ad66be5f9ed2e04e386f3b05f143eb6e41c",
+    "licence": "Original Dr.forms manuscript drawing"
+  },
+  {
+    "asset": "Assets/SourceFiles/Prototype/Resources/Courtyard/ManuscriptHeading.ttf",
+    "bytes": 1051232,
+    "sha256": "de1b7923fbc20ce742f6498d085ad0b64dc3625efbd8bdb2f01dc70e1e7a6edd",
+    "licence": "Cormorant Garamond SemiBold; SIL OFL 1.1; unmodified",
+    "source": "https://raw.githubusercontent.com/CatharsisFonts/Cormorant/016784836d2ad47bc4c62b7f504a0a5875d85aeb/fonts/ttf/CormorantGaramond-SemiBold.ttf",
+    "sourceRevision": "016784836d2ad47bc4c62b7f504a0a5875d85aeb"
   }
 ]

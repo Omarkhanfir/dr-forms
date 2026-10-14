@@ -130,4 +130,36 @@ delivered after the configured guard has expired.
 
 Lab recordings are `lab-{portrait,landscape}-gameplay.webm` outside Git. Review decoded consecutive frames from these recordings for alternating steps, independent throwing, hand release and follow-through; an advancing clip name alone does not establish visible animation. Release timing uses scaled time; pending releases cancel on gameplay input suspension. Decorative chemical splashes do not query targets or apply area damage.
 
+For **DRFORMS-MANUSCRIPT-2**, use external `ManuscriptReviewBuild` and
+`ManuscriptEvidence/Review` for the build/artifact variables. The motion suite also
+checks a smaller analog joystick displacement for walking, a stop transition,
+and a moving leg clip during the throw overlay. Its pause test starts Attack
+and Pause fingers together, then releases Pause, to reduce protocol latency
+inside the short release window. An accepted cancelled attack is required;
+a pause arriving after release is a test failure, not cancellation evidence.
+The full-flow suite records room-two canvas combat as
+`manuscript-both-enemies.webm`, using actual controls and read-only observations.
+These canvas-stream clips can omit WebGL frames in headless Chrome; delivery
+uses browser compositor video instead. Set `DRFORMS_RECORD_VIDEO=1` to capture
+`lab-{portrait,landscape}-compositor.webm`. For a short actual-control room-two
+demonstration, use `DRFORMS_CAPTURE_COMBAT_ONLY=1` with a separate artifact root
+and `DRFORMS_FLOW_PORT=8770`; it kites without attacking until the first ranged
+preparation/release/recovery has been observed, then clears the encounter.
+`DRFORMS_CAPTURE_PHONE_QUESTION_ONLY=1` captures an ordinary paused question at
+390x844 and 844x390 and ends the supplementary run. These modes do not replace
+the full-flow suite. Recordings are silent. Long-question fixtures, touch/keyboard selections,
+rapid-click input guards, Retry/final victory and simulated Safari focus remain
+in the existing full-flow suite. Actual Safari and physical-device results must
+be reported separately.
+
+This workstation's external Playwright expects an unavailable encoder revision.
+Delivery reused installed FFmpeg 8.1.1 through the external
+`ManuscriptEvidence/existing-encoder.cjs` preload (no package/tool upgrades):
+`node -r C:/Users/21654/DrFormsGame-WebVerification/ManuscriptEvidence/existing-encoder.cjs Tests/Browser/courtyard-visual.cjs`.
+The final 15.64-second H.264 review excerpt is `ManuscriptEvidence/combat-review.mp4`.
+The LAN review page supplies normal/quarter-speed playback, the actual panels,
+and the redistributed font notice. The preview server supports video MIME types
+and byte-range seeking. `GamePrototypeBuild.Build` also packages the OFL font
+notice beside future player outputs.
+
 The motion suite uses the default room-one chaser speed (1.8 units/sec) and read-only initial spawn observations to begin moving away before contact. Run it separately from other software-rendered browser suites when verifying the short pending-throw interruption window.

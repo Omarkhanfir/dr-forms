@@ -35,11 +35,20 @@ namespace DrForms.Prototype
         private PrototypeCombat combat;
         private PrototypeWaves waves;
         private RectTransform panel, contentRect;
+        private RectTransform paper;
+        private Sprite manuscriptSprite;
+        private float openedAt;
+        private const float OpeningSeconds = .28f;
+        private static readonly Color Ink = new Color(.18f,.17f,.18f);
+        private static readonly Color Burgundy = new Color(.45f,.10f,.18f);
+        private static readonly Color AnswerGrey = new Color(.83f,.82f,.79f);
         private Text progress, prompt, questionStep;
         private PrototypeDeliberateButton submit;
         private string rewardFeedback = "";
         private readonly List<PrototypeDeliberateButton> options = new List<PrototypeDeliberateButton>();
         private readonly List<Text> labels = new List<Text>();
+        private readonly List<Image> choiceMarks = new List<Image>();
+        private float selectionAt;
         private float previousTimeScale, neutralAt = -1;
         private int epoch, generation;
         private bool ready, layoutDirty = true;
@@ -80,41 +89,63 @@ namespace DrForms.Prototype
             progress = PrototypeControls.Label("Question Progress Text", status, "", 14);
             progress.resizeTextForBestFit = true; progress.resizeTextMinSize = 10; progress.resizeTextMaxSize = 14;
             panel = PrototypeControls.Rect("Question Screen", root, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-            panel.gameObject.AddComponent<Image>().color = new Color(0.025f, 0.10f, 0.11f, 1);
-            var step = PrototypeControls.Rect("Fixed Question Progress", panel, new Vector2(.05f,.95f), new Vector2(.95f,1), Vector2.zero, Vector2.zero);
-            questionStep = PrototypeControls.Label("Question Number", step, "", 18);
-            var viewport = PrototypeControls.Rect("Question Viewport", panel, new Vector2(0.05f, 0.24f), new Vector2(0.95f, 0.95f), Vector2.zero, Vector2.zero);
-            viewport.gameObject.AddComponent<Image>().color = new Color(0.025f, 0.10f, 0.11f, 1);
+            panel.gameObject.AddComponent<Image>().color = new Color(.035f,.07f,.075f,1);
+            paper = PrototypeControls.Rect("Laboratory Manuscript", panel, new Vector2(.025f,.025f), new Vector2(.975f,.975f), Vector2.zero, Vector2.zero);
+            var paperTexture = Resources.Load<Texture2D>("Courtyard/Manuscript");
+            var paperImage = paper.gameObject.AddComponent<Image>();
+            paperImage.sprite = manuscriptSprite = Sprite.Create(paperTexture,new Rect(0,0,paperTexture.width,paperTexture.height),Vector2.one*.5f,100,0,SpriteMeshType.FullRect,new Vector4(36,36,36,36));
+            paperImage.type = Image.Type.Sliced;
+            var shadow = paper.gameObject.AddComponent<Shadow>(); shadow.effectColor = new Color(0,0,0,.38f); shadow.effectDistance = new Vector2(0,-8);
+            var softShadow = paper.gameObject.AddComponent<Shadow>(); softShadow.effectColor = new Color(0,0,0,.15f); softShadow.effectDistance = new Vector2(3,-13);
+            var step = PrototypeControls.Rect("Fixed Question Progress", paper, new Vector2(.06f,.83f), new Vector2(.94f,.95f), Vector2.zero, Vector2.zero);
+            questionStep = PrototypeControls.Label("Question Number", step, "", 28);
+            questionStep.font = Resources.Load<Font>("Courtyard/ManuscriptHeading"); questionStep.color = Burgundy;
+            questionStep.verticalOverflow = VerticalWrapMode.Overflow;
+            var viewport = PrototypeControls.Rect("Question Viewport", paper, new Vector2(0.06f, 0.24f), new Vector2(0.94f, 0.82f), Vector2.zero, Vector2.zero);
+            viewport.gameObject.AddComponent<Image>().color = new Color(1,1,1,.015f);
             viewport.gameObject.AddComponent<RectMask2D>();
             contentRect = PrototypeControls.Rect("Scrollable Content", viewport, new Vector2(0, 1), Vector2.one, Vector2.zero, Vector2.zero);
             contentRect.pivot = new Vector2(0.5f, 1);
             var layout = contentRect.gameObject.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 14; layout.padding = new RectOffset(8, 8, 8, 8);
+            layout.spacing = 10; layout.padding = new RectOffset(8, 8, 8, 8);
             layout.childControlWidth = layout.childControlHeight = true;
             layout.childForceExpandWidth = true; layout.childForceExpandHeight = false;
             contentRect.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            var scroll = panel.gameObject.AddComponent<ScrollRect>();
+            var scroll = paper.gameObject.AddComponent<ScrollRect>();
             scroll.viewport = viewport; scroll.content = contentRect; scroll.horizontal = false;
             scroll.movementType = ScrollRect.MovementType.Clamped;
             var title = PrototypeControls.Rect("Question Prompt", contentRect, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             prompt = PrototypeControls.Label("Prompt", title, "", 26);
+            prompt.color = Ink; prompt.alignment = TextAnchor.MiddleLeft;
             prompt.horizontalOverflow = HorizontalWrapMode.Wrap;
             prompt.verticalOverflow = VerticalWrapMode.Overflow;
-            title.gameObject.AddComponent<LayoutElement>().minHeight = 100;
+            title.gameObject.AddComponent<LayoutElement>().minHeight = 54;
             // Text supplies preferred height through its own layout on the prompt container below.
             prompt.rectTransform.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
             for (var i = 0; i < 3; i++)
             {
                 var index = i;
                 var option = MakeButton("Answer " + i, contentRect, () => Select(index));
-                option.gameObject.AddComponent<LayoutElement>().minHeight = 72;
+                option.gameObject.AddComponent<LayoutElement>().minHeight = 64;
                 options.Add(option);
                 labels.Add(PrototypeControls.Label("Answer Text", (RectTransform)option.transform, "", 24));
+                labels[i].color = Ink; labels[i].alignment = TextAnchor.MiddleLeft;
+                labels[i].rectTransform.offsetMin = new Vector2(56,10); labels[i].rectTransform.offsetMax = new Vector2(-18,-10);
+                var mark = PrototypeControls.Rect("Choice mark", option.transform, new Vector2(0,.5f),new Vector2(0,.5f),new Vector2(28,0),new Vector2(22,22));
+                var markImage = mark.gameObject.AddComponent<Image>(); markImage.color = AnswerGrey; markImage.raycastTarget=false;
+                var markRim = mark.gameObject.AddComponent<Outline>(); markRim.effectDistance=new Vector2(2,-2); markRim.effectColor=Ink;
+                choiceMarks.Add(markImage);
+                // Original geometric check, independent of font glyph support.
+                var shortStroke=PrototypeControls.Rect("Check short stroke",mark,new Vector2(.5f,.5f),new Vector2(.5f,.5f),new Vector2(-4,-1),new Vector2(3,7));
+                shortStroke.localRotation=Quaternion.Euler(0,0,45);shortStroke.gameObject.AddComponent<Image>().raycastTarget=false;
+                var longStroke=PrototypeControls.Rect("Check long stroke",mark,new Vector2(.5f,.5f),new Vector2(.5f,.5f),new Vector2(2,2),new Vector2(3,14));
+                longStroke.localRotation=Quaternion.Euler(0,0,-40);longStroke.gameObject.AddComponent<Image>().raycastTarget=false;
             }
-            var footer = PrototypeControls.Rect("Actions", panel, new Vector2(0.08f, 0.04f), new Vector2(0.92f, 0.20f), Vector2.zero, Vector2.zero);
-            var hint = PrototypeControls.Rect("Question Help", panel, new Vector2(0.05f, 0.205f), new Vector2(0.95f, 0.24f), Vector2.zero, Vector2.zero);
-            PrototypeControls.Label("Help", hint, "Scroll for more. Choose an option, then Submit Answer.", 14);
+            var footer = PrototypeControls.Rect("Actions", paper, new Vector2(0.08f, 0.05f), new Vector2(0.92f, 0.18f), Vector2.zero, Vector2.zero);
+            var hint = PrototypeControls.Rect("Question Help", paper, new Vector2(0.06f, 0.185f), new Vector2(0.94f, 0.24f), Vector2.zero, Vector2.zero);
+            var help = PrototypeControls.Label("Help", hint, "Scroll to read. Choose, then submit.", 14); help.color = Ink;
             submit = MakeButton("Submit Answer", footer, Submit);
+            submit.GetComponent<Image>().color = Burgundy;
             PrototypeControls.Label("Submit Text", (RectTransform)submit.transform, "Submit Answer", 24);
             panel.gameObject.SetActive(false);
             if (content == null || content.Length != 3 || waves == null || waves.WaveCount != content.Length
@@ -134,11 +165,21 @@ namespace DrForms.Prototype
         private PrototypeDeliberateButton MakeButton(string name, RectTransform parent, UnityEngine.Events.UnityAction action)
         {
             var rect = PrototypeControls.Rect(name, parent, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-            var image = rect.gameObject.AddComponent<Image>(); image.color = new Color(0.1f, 0.45f, 0.4f);
+            var image = rect.gameObject.AddComponent<Image>(); image.color = AnswerGrey;
+            var rim = rect.gameObject.AddComponent<Outline>(); rim.effectColor = new Color(.37f,.35f,.34f,.7f); rim.effectDistance = new Vector2(1,-1);
             var button = rect.gameObject.AddComponent<PrototypeDeliberateButton>();
             button.Owner = this; button.targetGraphic = image;
-            var colors = button.colors; colors.highlightedColor = new Color(1, 0.9f, 0.4f); colors.selectedColor = colors.highlightedColor;
-            colors.disabledColor = new Color(0.35f, 0.35f, 0.35f); button.colors = colors;
+            var colors = button.colors; colors.normalColor = Color.white;
+            colors.highlightedColor = new Color(1.08f,1.08f,1.08f); colors.pressedColor = new Color(.72f,.70f,.68f);
+            colors.selectedColor = new Color(.96f,.96f,.96f); colors.disabledColor = new Color(.7f,.7f,.7f); colors.fadeDuration = .09f; button.colors = colors;
+            var focus=PrototypeControls.Rect("Keyboard focus",rect,Vector2.zero,Vector2.one,Vector2.zero,new Vector2(-10,-10));
+            foreach(var vertical in new[]{false,true}) foreach(var high in new[]{false,true}) {
+                var min=vertical?new Vector2(high?1:0,0):new Vector2(0,high?1:0);
+                var max=vertical?new Vector2(high?1:0,1):new Vector2(1,high?1:0);
+                var line=PrototypeControls.Rect("Focus line",focus,min,max,Vector2.zero,vertical?new Vector2(2,0):new Vector2(0,2));
+                var graphic=line.gameObject.AddComponent<Image>();graphic.color=name=="Submit Answer"?new Color(1,.93f,.76f):Burgundy;graphic.raycastTarget=false;
+            }
+            button.FocusFrame=focus.gameObject;focus.gameObject.SetActive(false);
             button.onClick.AddListener(action);
             return button;
         }
@@ -174,7 +215,7 @@ namespace DrForms.Prototype
             if (ready) return;
             if (PrototypeControls.AnyPointerPressed() || SubmitKeyHeld()) { neutralAt = -1; return; }
             if (neutralAt < 0) neutralAt = Time.unscaledTime;
-            if (Time.unscaledTime - neutralAt < inputGuardSeconds) return;
+            if (Time.unscaledTime - neutralAt < inputGuardSeconds || Time.unscaledTime-openedAt < OpeningSeconds) return;
             ready = true;
             EventSystem.current?.SetSelectedGameObject(options[0].gameObject);
         }
@@ -188,39 +229,54 @@ namespace DrForms.Prototype
             state = ScreenState.Question; selected = -1; rewardFeedback = "";
             previousTimeScale = Time.timeScale; Time.timeScale = 0;
             controls.SetGameplayEnabled(false); PrototypeEnemyBolt.Clear(); Guard();
-            questionStep.text = "Question " + wave + " / " + content.Length;
+            openedAt = Time.unscaledTime;
+            questionStep.text = "Laboratory Notes\nQuestion " + wave + " / " + content.Length;
             prompt.text = content[AnswerCount].prompt;
-            foreach (var option in options) { option.gameObject.SetActive(true); option.GetComponent<Image>().color = new Color(0.1f, 0.45f, 0.4f); }
+            foreach (var option in options) { option.gameObject.SetActive(true); option.GetComponent<Image>().color = AnswerGrey; option.GetComponent<Outline>().effectColor = new Color(.37f,.35f,.34f,.7f); }
             for (var i = 0; i < options.Count; i++) labels[i].text = content[AnswerCount].options[i];
+            foreach(var mark in choiceMarks){mark.color=AnswerGrey;foreach(Transform stroke in mark.transform)stroke.gameObject.SetActive(false);}
             submit.gameObject.SetActive(true); submit.interactable = false;
             contentRect.anchoredPosition = Vector2.zero;
             panel.gameObject.SetActive(true);
             layoutDirty = true; ResizeText();
         }
 
-        private void LateUpdate() { if (Paused) ResizeText(); }
+        private void LateUpdate() {
+            if (!Paused) return;
+            // Unscaled presentation only; the opaque screen continues to intercept attack gestures.
+            var t = Mathf.Clamp01((Time.unscaledTime-openedAt)/OpeningSeconds); var ease = 1-Mathf.Pow(1-t,3);
+            paper.localScale = new Vector3(1,Mathf.Lerp(.93f,1,ease),1);
+            paper.anchoredPosition = new Vector2(0,Mathf.Lerp(-12,0,ease));
+            questionStep.fontSize = paper.rect.height < 550 ? 22 : 28;
+            if(selected>=0){var pulse=Mathf.Clamp01((Time.unscaledTime-selectionAt)/.16f);choiceMarks[selected].transform.localScale=Vector3.one*(1+.12f*Mathf.Sin(pulse*Mathf.PI));}
+            ResizeText();
+        }
         private void ResizeText()
         {
             // Recompute wrapped heights on rotation/resizing as well as when content changes.
-            var width = Mathf.Max(80, contentRect.rect.width - 32);
+            var width = Mathf.Max(80, contentRect.rect.width - 90);
             if (!layoutDirty && Mathf.Abs(width-lastLayoutWidth) < .5f) return;
             layoutDirty = false; lastLayoutWidth = width;
             var settings = prompt.GetGenerationSettings(new Vector2(width, 0));
-            prompt.transform.parent.GetComponent<LayoutElement>().preferredHeight = Mathf.Max(100,
+            prompt.transform.parent.GetComponent<LayoutElement>().preferredHeight = Mathf.Max(54,
                 prompt.cachedTextGeneratorForLayout.GetPreferredHeight(prompt.text, settings) / prompt.pixelsPerUnit + 24);
             for (var i = 0; i < labels.Count; i++)
-                options[i].GetComponent<LayoutElement>().preferredHeight = Mathf.Max(72,
+                options[i].GetComponent<LayoutElement>().preferredHeight = Mathf.Max(64,
                     labels[i].cachedTextGeneratorForLayout.GetPreferredHeight(labels[i].text, labels[i].GetGenerationSettings(new Vector2(width, 0))) / labels[i].pixelsPerUnit + 24);
         }
 
         private void Select(int index)
         {
             if (state != ScreenState.Question || !InputReady) return;
-            selected = index; layoutDirty = true;
+            selected = index; selectionAt=Time.unscaledTime; layoutDirty = true;
             for (var i = 0; i < options.Count; i++)
             {
-                labels[i].text = (i == selected ? "[Selected] " : "") + content[AnswerCount].options[i];
-                options[i].GetComponent<Image>().color = i == selected ? new Color(0.15f, 0.65f, 0.55f) : new Color(0.1f, 0.45f, 0.4f);
+                labels[i].text = content[AnswerCount].options[i];
+                choiceMarks[i].color=i==selected?Burgundy:AnswerGrey;choiceMarks[i].transform.localScale=Vector3.one;
+                foreach(Transform stroke in choiceMarks[i].transform)stroke.gameObject.SetActive(i==selected);
+                options[i].GetComponent<Image>().color = i == selected ? new Color(.89f,.82f,.80f) : AnswerGrey;
+                options[i].GetComponent<Outline>().effectColor = i == selected ? Burgundy : new Color(.37f,.35f,.34f,.7f);
+                options[i].GetComponent<Outline>().effectDistance = i == selected ? new Vector2(2,-2) : new Vector2(1,-1);
             }
             submit.interactable = true;
             // Invalidate any simultaneous second pointer/key gesture already in progress.
@@ -242,7 +298,7 @@ namespace DrForms.Prototype
             controls.NotifyReward(reward);
             waves.CompleteAnsweredWave();
         }
-        private void OnDestroy() { if (Paused) Time.timeScale = previousTimeScale; }
+        private void OnDestroy() { if (Paused) Time.timeScale = previousTimeScale; if(manuscriptSprite!=null)Destroy(manuscriptSprite); }
     }
 
     // Button clicks require a fresh down in this screen generation. Keyboard submits
@@ -250,6 +306,7 @@ namespace DrForms.Prototype
     public sealed class PrototypeDeliberateButton : Button
     {
         public PrototypeQuestions Owner;
+        public GameObject FocusFrame;
         private readonly Dictionary<int, int> presses = new Dictionary<int, int>();
         public override void OnPointerDown(PointerEventData data)
         {
@@ -273,8 +330,10 @@ namespace DrForms.Prototype
         public override void OnSelect(BaseEventData data)
         {
             base.OnSelect(data);
+            if(FocusFrame!=null)FocusFrame.SetActive(true);
             Owner?.Reveal((RectTransform)transform);
         }
+        public override void OnDeselect(BaseEventData data){base.OnDeselect(data);if(FocusFrame!=null)FocusFrame.SetActive(false);}
         protected override void OnDisable() { presses.Clear(); base.OnDisable(); }
     }
 }

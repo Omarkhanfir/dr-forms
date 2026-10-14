@@ -87,7 +87,7 @@ separate from question, background and ending pauses. Sound preference persists
 in browser local storage; assessment/run progress is still in memory. Retry
 preserves submitted answers/upgrades. The default preview hides developer
 diagnostics; use `?devDiagnostics=1` explicitly for troubleshooting. The menu
-shows `DRFORMS-LAB-1`. Phone layouts use a safe-area-aware canvas and browser
+shows `DRFORMS-MANUSCRIPT-2`. Phone layouts use a safe-area-aware canvas and browser
 insets. Physical iPhone verification of this new polish is pending; the user
 confirmed movement and attack in the preceding SAFARI-FOCUS-2 build.
 

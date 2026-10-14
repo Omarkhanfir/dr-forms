@@ -137,6 +137,8 @@ namespace DrForms.Prototype
                 releaseOrigin=combat!=null?combat.LastReleaseOrigin:Vector3.zero,
                 artShadowResolution = CourtyardArt.ShadowResolution,
                 artAnimation = GetComponent<CourtyardActor>() != null ? GetComponent<CourtyardActor>().CurrentAnimation : "",
+                locomotionAnimation = GetComponent<CourtyardActor>() != null ? GetComponent<CourtyardActor>().LocomotionAnimation : "",
+                locomotionTime = GetComponent<CourtyardActor>() != null ? GetComponent<CourtyardActor>().LocomotionTime : 0,
                 artClipTime = GetComponent<CourtyardActor>() != null ? GetComponent<CourtyardActor>().ClipTime : 0,
                 artSkinnedParts = GetComponent<CourtyardActor>() != null ? GetComponent<CourtyardActor>().SkinnedParts : 0,
                 menuSoundCenter = controls.MenuSoundCenter, menuRestartCenter = controls.MenuRestartCenter,
@@ -236,6 +238,8 @@ namespace DrForms.Prototype
             public float releaseDelay;
             public Vector3 releaseOrigin;
             public string artAnimation;
+            public string locomotionAnimation;
+            public float locomotionTime;
             public float artClipTime;
             public int artSkinnedParts, artShadowResolution;
             public int frame, rangedCount, telegraphCount, enemyBolts, projectilePool;

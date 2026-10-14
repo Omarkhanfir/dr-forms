@@ -43,10 +43,10 @@ function passed(name, details) { result.checks.push({ name, details }); console.
     async function open(touch, phone = false) {
       const target = {touch,phone}; result.sessions.push(target);
       target.events = []; target.states = [];
-      const context = await browser.newContext(touch ? {
+      const context = await browser.newContext({...(touch ? {
         viewport: phone ? { width: 390, height: 844 } : { width: 1024, height: 768 }, hasTouch: true, isMobile: true, deviceScaleFactor: 1,
         userAgent: 'Mozilla/5.0 (Linux; Android 13; Tablet) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
-      } : { viewport: { width: 1280, height: 900 } });
+      } : { viewport: { width: 1280, height: 900 } }),...(process.env.DRFORMS_RECORD_VIDEO==='1'?{recordVideo:{dir:path.join(artifacts,'video'),size:{width:1280,height:900}}}:{})});
       const page = await context.newPage();
       if(phone) await page.addInitScript(()=>{document.hasFocus=()=>false;});
       await page.addInitScript(() => {
@@ -277,6 +277,20 @@ function passed(name, details) { result.checks.push({ name, details }); console.
     }
     async function clearWave(t,holdOnFinal=false,retries=0){
       let s=await t.snapshot(),lastClick=-1,held=false,heldAt=0,lastAlive=s;
+      const demonstrateCast=process.env.DRFORMS_CAPTURE_COMBAT_ONLY==='1'&&s.wave===2;
+      let demonstrateAfter=Infinity;
+      const recordMotion=s.wave===2&&!t.target.touch&&!t.target.motionRecorded;
+      if(recordMotion){
+        t.target.motionRecorded=true;
+        await t.page.evaluate(()=>{
+          window.combatChunks=[];
+          const source=document.querySelector('#unity-canvas'),capture=document.createElement('canvas');capture.width=source.width;capture.height=source.height;
+          const paint=capture.getContext('2d');window.combatCapturing=true;
+          function copy(){if(!window.combatCapturing)return;paint.drawImage(source,0,0);requestAnimationFrame(copy);}requestAnimationFrame(copy);
+          window.combatRecorder=new MediaRecorder(capture.captureStream(30),{mimeType:'video/webm;codecs=vp9',videoBitsPerSecond:2500000});
+          window.combatRecorder.ondataavailable=e=>{if(e.data.size)window.combatChunks.push(e.data)};window.combatRecorder.start();
+        });
+      }
       const initialShots=s.shotsFired,initialMoving=s.movingSeconds;
       assert(s.rangedCount === (s.wave>=2 ? 1 : 0), 'Introduce one mage only after wave one');
       let observedTelegraph=false, observedRangedShot=false;
@@ -291,6 +305,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
           await t.page.screenshot({path:path.join(artifacts,`visual-after-${t.target.phone?'phone':t.target.touch?'tablet':'desktop'}-${framing}.png`)});
         }
         observedTelegraph ||= s.telegraphCount>0;
+        if(demonstrateCast&&s.telegraphCount>0&&demonstrateAfter===Infinity)demonstrateAfter=s.time+1.9;
         if(s.telegraphCount>0 && !t.target.telegraphScreenshot) {
           t.target.telegraphScreenshot=true;
           await t.page.screenshot({path:path.join(artifacts, `polish-${t.target.touch?t.target.phone?'phone':'tablet':'desktop'}-ranged-telegraph.png`)});
@@ -307,7 +322,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
           const a=await t.client(s,s.attackCenter);
           if(!t.joystickStarted){const center=await t.client(s,s.joystickCenter);await t.cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...center,id:1}]});t.joystickStarted=true;}
           await t.cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...j,id:1}]});
-          if(s.time-lastClick>.28){
+          if(s.time-lastClick>.28&&(!demonstrateCast||s.time>=demonstrateAfter)){
             await t.cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...j,id:1},{...a,id:2}]});
             await t.page.waitForTimeout(25);
             // CDP touchEnd names the finger ending, rather than remaining fingers.
@@ -319,7 +334,7 @@ function passed(name, details) { result.checks.push({ name, details }); console.
           const dx=goal.x-s.position.x,dz=goal.z-s.position.z,len=Math.hypot(dx,dz),step=Math.min(2.4,len);
           const waypoint={x:s.position.x+dx/Math.max(.001,len)*step,z:s.position.z+dz/Math.max(.001,len)*step};
           const p=await t.client(s,floorPoint(s,waypoint));p.x+=t.target.states.length%2?4:-4;await t.page.mouse.move(p.x,p.y);
-          if(!held && s.time-lastClick>.26){await t.page.mouse.click(p.x,p.y);lastClick=s.time;}
+          if(!held && s.time-lastClick>.26&&(!demonstrateCast||s.time>=demonstrateAfter)){await t.page.mouse.click(p.x,p.y);lastClick=s.time;}
           // A shot is in flight at the last enemy; hold a second attack gesture
           // across the actual combat->question transition.
           if(holdOnFinal && s.enemyCount===1 && s.enemyHealth<=s.damage*2 && s.projectiles>0){
@@ -351,6 +366,14 @@ function passed(name, details) { result.checks.push({ name, details }); console.
         assert.deepStrictEqual(s.answers,prior);assert(s.damage===damage&&s.playerHealth===100&&s.enemyCount===wave+1);
         passed('Ordinary touch Retry after active-combat defeat preserves answers/rewards and restores only the unfinished wave', {phone:t.target.phone,wave});
         return clearWave(t,holdOnFinal,retries+1);
+      }
+      if(recordMotion){
+        const recording=await t.page.evaluate(async()=>{
+          await new Promise(r=>{window.combatRecorder.onstop=r;window.combatRecorder.stop()});
+          window.combatCapturing=false;
+          return new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result.split(',')[1]);f.readAsDataURL(new Blob(window.combatChunks,{type:'video/webm'}));});
+        });
+        fs.writeFileSync(path.join(artifacts,'manuscript-both-enemies.webm'),Buffer.from(recording,'base64'));
       }
       if(observedTelegraph && observedRangedShot) passed('Bloom specimen windup and slow ranged shot observed during actual combat', {wave:s.wave,phone:t.target.phone});
       assert(!s.defeated,'Defeated while clearing wave');assert(s.questionPaused,'No question after clear');
@@ -435,6 +458,19 @@ function passed(name, details) { result.checks.push({ name, details }); console.
     const d=await open(false);let s=await poll(d,x=>x.wave===1);
     // First run: guard regressions + keyboard + preserved retry mid-run.
     s=await clearWave(d,true);
+    if(process.env.DRFORMS_CAPTURE_PHONE_QUESTION_ONLY==='1'){
+      for(const [label,width,height] of [['portrait',390,844],['landscape',844,390]]){
+        await d.page.setViewportSize({width,height});await d.page.waitForTimeout(350);s=await d.snapshot();
+        assert(s.questionPaused&&s.answers.length===0&&s.selectedAnswer===-1);
+        await d.page.screenshot({path:path.join(artifacts,`manuscript-question-${label}.png`)});
+      }
+      passed('Actual normal question panel captured at both phone resolutions without changing its transaction');
+      await d.context.close();return;
+    }
+    if(process.env.DRFORMS_CAPTURE_COMBAT_ONLY==='1'){
+      s=await answer(d,s);s=await clearWave(d);
+      assert(s.questionPaused&&s.wave===2);const video=d.page.video();await d.context.close();if(video)await video.saveAs(path.join(artifacts,'combat-compositor.webm'));return;
+    }
     const focusCdp=await d.context.newCDPSession(d.page);
     await focusCdp.send('Emulation.setFocusEmulationEnabled',{enabled:false});
     const other=await d.context.newPage();await other.goto('about:blank');await other.bringToFront();
@@ -496,7 +532,11 @@ function passed(name, details) { result.checks.push({ name, details }); console.
         passed('Background touches cannot recover focus or fire and becoming visible with DOM focus false does not resume');
         s=await recoverSafari(t,s,s.attackCenter,1);assert(s.canPlay&&!s.hasDestination);
         passed('Trusted visible Attack recovery is consumed until release; saved combat clock resumes despite DOM focus staying false');
-        await clearSafariObservation(t);s=await click(t,s,s.attackCenter);s=await poll(t,x=>x.shotsFired===before+1&&!x.throwPending);assert(s.shotsFired===before+1);
+        await clearSafariObservation(t);
+        // Random spawns may still be outside flask range at recovery; an out-of-range
+        // gesture is correctly rejected. Wait for actual pursuit before this attack proof.
+        s=await poll(t,x=>x.canPlay&&x.enemyAlive&&dist(x.enemyPosition,x.position)<x.range-.1);
+        s=await click(t,s,s.attackCenter);s=await poll(t,x=>x.shotsFired===before+1&&!x.throwPending);assert(s.shotsFired===before+1);
         passed('A fresh Attack after recovery fires normally exactly once');
       }
       s=await clearWave(t);

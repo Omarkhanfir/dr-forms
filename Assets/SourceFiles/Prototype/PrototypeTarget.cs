@@ -22,6 +22,7 @@ namespace DrForms.Prototype
         public bool HitFlashActive => Time.time < hitUntil;
         public float DisplayedHealthFraction { get; private set; } = 1;
         public int DamageApplications { get; private set; }
+        public Vector3 HitDirection {get;private set;}
         private void Awake()
         {
             Health = maximumHealth;
@@ -69,26 +70,26 @@ namespace DrForms.Prototype
             visual.SetColor("_BaseColor", HitFlashActive ? new Color(1, 0.95f, 0.65f) : normalColor);
             body.SetPropertyBlock(visual);
         }
-        public void TakeDamage(int damage)
+        public void TakeDamage(int damage, Vector3 direction = default)
         {
             if (Health <= 0 || damage <= 0) return;
+            direction.y=0;HitDirection=direction.sqrMagnitude>.001f?direction.normalized:Vector3.back;
             PrototypePresentation.Damage(transform.position + new Vector3(0, 2.2f, .4f), damage);
             DamageApplications++;
             hitUntil = Time.time + 0.12f;
             Health = Mathf.Max(0, Health - damage);
             RefreshHealth();
             PrototypeAudio.Play(1);
-            PrototypeCombatEffect.Spawn(transform.position, PrototypeCharacterVisual.Paint(8), new Color(.65f,.9f,.2f), .5f, .2f, "Chemical Splash");
+            PrototypeCombatEffect.Spawn(transform.position, PrototypeCharacterVisual.Paint(8), new Color(.65f,.9f,.2f), .27f, .12f, "Chemical Splash");
             for(int i=0;i<3;i++) {
                 float angle=i*Mathf.PI*2/3;
                 PrototypeCombatEffect.Spawn(transform.position+new Vector3(Mathf.Cos(angle)*.35f,.1f,Mathf.Sin(angle)*.35f),
                     PrototypeCharacterVisual.Paint(11),new Color(.55f,.91f,.86f),.13f,.22f,"Glass Fragment");
             }
-            for(int i=0;i<3;i++)PrototypeCombatEffect.Spawn(transform.position+new Vector3((i-1)*.15f,.1f,.1f),CourtyardArt.GlowMaterial,new Color(.65f,.9f,.2f),.18f,.32f,"Chemical Splash");
             if (Health == 0)
             {
                 PrototypeCombatEffect.Spawn(transform.position, body.sharedMaterial,
-                    new Color(1, 0.7f, 0.2f), 1.4f, 0.3f, "Target Defeat");
+                    new Color(1, 0.7f, 0.2f), .45f, .18f, "Target Defeat");
                 healthDisplay.gameObject.SetActive(false);
                 var controller = GetComponent<CharacterController>(); if (controller != null) controller.enabled = false;
                 // The visual owns a short unscaled defeat animation, including question pauses.
