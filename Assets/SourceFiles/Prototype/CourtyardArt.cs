@@ -31,7 +31,13 @@ namespace DrForms.Prototype {
     {"Wood",new Color(.06f,.26f,.27f)},{"Gold",new Color(.63f,.45f,.19f)},{"Iron",new Color(.10f,.17f,.19f)},
     {"Leaf",new Color(.15f,.32f,.19f)},{"LeafLight",new Color(.31f,.44f,.20f)},{"Trunk",new Color(.20f,.17f,.12f)},
     {"Cloth",new Color(.13f,.34f,.37f)},{"Glow",new Color(.30f,.85f,.74f)},{"Flame",new Color(1,.60f,.12f)}};
+   colors["LabFloor"]=new Color(.16f,.24f,.31f);colors["LabFloorLight"]=new Color(.17f,.25f,.32f);colors["LabFloorDark"]=new Color(.12f,.19f,.25f);
+   colors["LabWall"]=new Color(.72f,.79f,.83f);colors["LabTrim"]=new Color(.035f,.14f,.20f);colors["LabMetal"]=new Color(.11f,.21f,.27f);
+   colors["LabBrass"]=new Color(.53f,.36f,.16f);colors["LabAccent"]=new Color(.23f,.73f,.66f);colors["LabGlass"]=new Color(.21f,.49f,.55f);
    m=new Material(Shader.Find("Universal Render Pipeline/Lit"));m.SetColor("_BaseColor",colors.TryGetValue(key,out var color)?color:Color.gray);m.SetFloat("_Smoothness",.12f);m.enableInstancing=true;
+   if(key=="LabMetal"||key=="LabBrass"){m.SetFloat("_Metallic",.45f);m.SetFloat("_Smoothness",.35f);}
+   if(key=="LabGlass")m.SetFloat("_Smoothness",.7f);
+   if(key=="LabAccent"){m.EnableKeyword("_EMISSION");m.SetColor("_EmissionColor",color*.3f);}
    if(key.StartsWith("Stone")||key.StartsWith("Tile")){m.SetTexture("_BaseMap",Resources.Load<Texture2D>("Courtyard/StoneGrain"));}
    if(key=="Glass")m.SetFloat("_Smoothness",.72f);
    if(key=="Gold"||key=="Iron"){m.SetFloat("_Metallic",.65f);m.SetFloat("_Smoothness",.4f);}
@@ -50,17 +56,27 @@ namespace DrForms.Prototype {
    foreach(var renderer in route.GetComponentsInChildren<MeshRenderer>())
     if(renderer.name!="Laboratory exit status")renderer.enabled=false;
    for(int index=0;index<3;index++){
-    var room=Object.Instantiate(Resources.Load<GameObject>("Courtyard/Room"),route,false);room.name="Dr.forms laboratory room "+(index+1);
+    var room=Object.Instantiate(Resources.Load<GameObject>(index==0?"Courtyard/LaboratoryRoom":"Courtyard/Room"),route,false);room.name="Dr.forms laboratory room "+(index+1);
     room.transform.localPosition=Vector3.forward*PrototypeWaves.RoomCenter(index);room.transform.localRotation=Quaternion.Euler(0,180,0);
     Dress(room);
     // Visuals have no colliders; room boundaries and encounters remain authoritative.
     foreach(var collision in room.GetComponentsInChildren<Collider>())Object.Destroy(collision);
    }
-   var gate=Object.Instantiate(Resources.Load<GameObject>("Courtyard/Gate"),door,false);gate.transform.localPosition=Vector3.zero;gate.transform.localRotation=Quaternion.Euler(0,180,0);gate.transform.localScale=new Vector3(1/door.localScale.x,1/door.localScale.y,1/door.localScale.z);Dress(gate);
+   var gate=Object.Instantiate(Resources.Load<GameObject>("Courtyard/Gate"),door,false);gate.name="First laboratory shutter";gate.transform.localPosition=Vector3.zero;gate.transform.localRotation=Quaternion.Euler(0,180,0);gate.transform.localScale=new Vector3(1/door.localScale.x,1/door.localScale.y,1/door.localScale.z);Dress(gate);
    // Visuals have no colliders; the existing room/door/controller remain authoritative.
    var light=RenderSettings.sun; if(light==null)light=GameObject.Find("Arena Light")?.GetComponent<Light>();
    if(light!=null){light.color=new Color(1,.96f,.86f);light.intensity=1.25f;light.transform.rotation=Quaternion.Euler(60,-32,0);light.shadows=LightShadows.Soft;light.shadowStrength=.38f;light.shadowBias=.04f;light.shadowNormalBias=.25f;}
    RenderSettings.ambientMode=AmbientMode.Trilight;RenderSettings.ambientSkyColor=new Color(.54f,.62f,.66f);RenderSettings.ambientEquatorColor=new Color(.40f,.49f,.49f);RenderSettings.ambientGroundColor=new Color(.25f,.31f,.30f);
+  }
+  public static void FirstRoomPresentation(Transform door,float opening,float playerZ){
+   var shutter=door.Find("First laboratory shutter");
+   if(shutter!=null){shutter.localPosition=Vector3.up*(-1.8f*opening/door.localScale.y);shutter.localScale=new Vector3(1/door.localScale.x,Mathf.Lerp(1,.03f,opening)/door.localScale.y,1/door.localScale.z);}
+   float t=Mathf.InverseLerp(16,10,playerZ);
+   var light=RenderSettings.sun;if(light==null)light=GameObject.Find("Arena Light")?.GetComponent<Light>();
+   if(light!=null){light.color=Color.Lerp(new Color(1,.96f,.86f),new Color(.97f,.98f,1),t);light.intensity=Mathf.Lerp(1.25f,1.2f,t);light.shadowStrength=Mathf.Lerp(.38f,.48f,t);}
+   RenderSettings.ambientSkyColor=Color.Lerp(new Color(.54f,.62f,.66f),new Color(.30f,.40f,.53f),t);
+   RenderSettings.ambientEquatorColor=Color.Lerp(new Color(.40f,.49f,.49f),new Color(.20f,.27f,.34f),t);
+   RenderSettings.ambientGroundColor=Color.Lerp(new Color(.25f,.31f,.30f),new Color(.12f,.16f,.20f),t);
   }
   public static void DressGate(Transform door){
    door.GetComponent<Renderer>().enabled=false;

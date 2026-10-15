@@ -137,6 +137,7 @@ namespace DrForms.Prototype
                 releaseOrigin=combat!=null?combat.LastReleaseOrigin:Vector3.zero,
                 artShadowResolution = CourtyardArt.ShadowResolution,
                 artAnimation = GetComponent<CourtyardActor>() != null ? GetComponent<CourtyardActor>().CurrentAnimation : "",
+                joints = GetComponent<CourtyardActor>() != null ? GetComponent<CourtyardActor>().Joints : default,
                 locomotionAnimation = GetComponent<CourtyardActor>() != null ? GetComponent<CourtyardActor>().LocomotionAnimation : "",
                 locomotionTime = GetComponent<CourtyardActor>() != null ? GetComponent<CourtyardActor>().LocomotionTime : 0,
                 artClipTime = GetComponent<CourtyardActor>() != null ? GetComponent<CourtyardActor>().ClipTime : 0,
@@ -239,6 +240,7 @@ namespace DrForms.Prototype
             public float releaseDelay;
             public Vector3 releaseOrigin;
             public string artAnimation;
+            public CourtyardActor.JointFrame joints;
             public string locomotionAnimation;
             public float locomotionTime;
             public float artClipTime;

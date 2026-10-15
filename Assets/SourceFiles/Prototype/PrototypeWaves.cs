@@ -99,6 +99,7 @@ namespace DrForms.Prototype
             transform.position = new Vector3(0, 1, RoomCenter(currentRoom) - (currentRoom == 0 ? 0 : 7));
             controller.enabled = true;
             CourtyardArt.BuildRoom(route.transform, doors[0]);
+            CourtyardArt.FirstRoomPresentation(doors[0], doorOpen[0], transform.position.z);
             for(int room=1;room<3;room++)CourtyardArt.DressGate(doors[room]);
             Camera.main.GetComponent<PrototypeCameraFollow>().ResetComposition();
         }
@@ -120,6 +121,7 @@ namespace DrForms.Prototype
         private void Update()
         {
             if (player.IsDefeated || Victory || !controls.CanPlay) return;
+            CourtyardArt.FirstRoomPresentation(doors[0], doorOpen[0], transform.position.z);
             for (int room = 0; room < 3; room++)
             {
                 if(exitLamps[room]!=null)exitLamps[room].sharedMaterial=CourtyardArt.EnvironmentMaterial(questions.AnswerCount>room?"Green":"Violet");

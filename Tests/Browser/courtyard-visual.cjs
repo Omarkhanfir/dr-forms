@@ -48,7 +48,7 @@ const server=http.createServer((req,res)=>{
   const start=s.position,shots=s.shotsFired,attack=await client(s,s.attackCenter);
   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...center,id:1}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...thumb,id:1}]});
   let capturedRun=false;for(let i=0;i<4&&!capturedRun;i++){await page.waitForTimeout(60);s=await state();if(s.artAnimation==='Running_A'){capturedRun=true;await page.screenshot({path:path.join(artifacts,`art-${label}-run.png`)});}}
-  for(let i=0;i<2;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...thumb,id:1},{...attack,id:2}]});await page.waitForTimeout(150);s=await state();await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[{...thumb,id:1}]});await page.waitForTimeout(150);}
+  for(let i=0;i<2;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...thumb,id:1},{...attack,id:2}]});await page.waitForTimeout(150);s=await state();await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[{...attack,id:2}]});await page.waitForTimeout(150);}
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});s=await state();
   assert(capturedRun&&Math.hypot(s.position.x-start.x,s.position.z-start.z)>1);pass('Actual joystick movement plays skeletal run without moving the controller through animation',{label});
   assert(s.shotsFired>shots);pass('Simultaneous actual touch movement and throwing',{label});

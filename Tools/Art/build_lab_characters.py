@@ -12,12 +12,20 @@ def build(name):
  bpy.ops.object.mode_set(mode='EDIT');rig.data.edit_bones.remove(rig.data.edit_bones[0])
  specs={'Root':((0,0,0),(0,0,.8),None),'Body':((0,0,.8),(0,0,1.6),'Root'),'Head':((0,0,1.6),(0,0,2.3),'Body'),'Arm.L':((-.43,0,1.5),(-.43,0,1.23),'Body'),'Arm.R':((.43,0,1.5),(.43,0,1.23),'Body'),'Forearm.L':((-.43,0,1.23),(-.43,0,.95),'Arm.L'),'Forearm.R':((.43,0,1.23),(.43,0,.95),'Arm.R'),'Leg.L':((-.22,0,.8),(-.22,0,.44),'Root'),'Leg.R':((.22,0,.8),(.22,0,.44),'Root'),'Shin.L':((-.22,0,.44),(-.22,0,.12),'Leg.L'),'Shin.R':((.22,0,.44),(.22,0,.12),'Leg.R'),'Coat.L':((-.22,.08,1.0),(-.22,.08,.65),'Body'),'Coat.R':((.22,.08,1.0),(.22,.08,.65),'Body'),'Satchel':((-.47,.05,1.12),(-.47,.05,.83),'Body'),'handslot.r':((.43,0,.95),(.43,0,.8),'Forearm.R')}
  for side,x in [('L',-.22),('R',.22)]:specs['Foot.'+side]=((x,0,.12),(x,-.25,.12),'Shin.'+side)
+ if name!='Acolyte':
+  for key,(a,b,parent) in list(specs.items()):
+   if key.startswith(('Leg.','Shin.','Foot.')) or key=='Root':continue
+   specs[key]=((a[0],a[1],a[2]+.18),(b[0],b[1],b[2]+.18),parent)
+  for side,x in [('L',-.22),('R',.22)]:
+   specs['Leg.'+side]=((x,0,1.0),(x,0,.55),'Root')
+   specs['Shin.'+side]=((x,0,.55),(x,0,.12),'Leg.'+side)
  for k,(a,b,parent) in specs.items():
   bone=rig.data.edit_bones.new(k);bone.head=a;bone.tail=b
   if parent:bone.parent=rig.data.edit_bones[parent]
  bpy.ops.object.mode_set(mode='OBJECT')
  parts=[]
  def shape(k,p,s,mat,bone='Body',box=False):
+  if name!='Acolyte' and not bone.startswith(('Leg.','Shin.','Foot.')) and bone!='Root':p=(p[0],p[1],p[2]+.18)
   if box:bpy.ops.mesh.primitive_cube_add(size=2,location=p)
   else:bpy.ops.mesh.primitive_uv_sphere_add(segments=12,ring_count=8,radius=1,location=p)
   o=bpy.context.object;o.name=k;o.scale=s;bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
@@ -29,19 +37,19 @@ def build(name):
   for x in [-.22,.22]:shape('Coat tails',(x,.10,.91),(.17,.20,.18),'Ivory','Coat.L' if x<0 else 'Coat.R',True)
   shape('Teal shirt',(0,-.255,1.3),(.12,.035,.27),'Teal',box=True)
   for z in [1.1,1.3,1.5]:shape('Coat buttons',(.19,-.28,z),(.035,.025,.035),'Black')
-  shape('Head',(0,0,1.97),(.35,.29,.36),'Skin','Head')
+  shape('Head',(0,0,1.97),(.30,.26,.31),'Skin','Head')
   for x in [-.20,.20]:
    shape('Oversized goggle rim',(x,-.22,2.25),(.22,.16,.16),'Teal','Head')
    shape('Goggle lens',(x,-.32,2.31),(.165,.085,.09),'Glass','Head')
    shape('Lens shine',(x-.045,-.37,2.35),(.05,.025,.025),'Ivory','Head')
   shape('Nose',(0,-.35,1.88),(.085,.13,.10),'Skin','Head')
   for i in range(7):
-   x=(i-3)*.12;shape('Wild swept hair',(x,.15,2.30+(.12 if i%2 else 0)),(.12,.23,.20),'Hair','Head')
+   x=(i-3)*.10;shape('Wild swept hair',(x,.15,2.30+(.12 if i%2 else 0)),(.11,.19,.17),'Hair','Head')
   shape('Flask satchel',(-.47,.05,1.0),(.18,.27,.23),'Violet','Satchel')
   for y,c in [(-.15,'Green'),(.12,'Glass')]:shape('Satchel flask',(-.57,y,1.20),(.10,.10,.14),c,'Satchel')
  else:
   c='Green' if name=='Guardian' else 'Violet'
-  shape('Specimen body',(0,0,1.13),(.50,.33,.56),c,box=name=='Guardian')
+  shape('Specimen body',(0,0,1.13),(.46,.31,.43 if name=='Guardian' else .56),c,box=name=='Guardian')
   shape('Specimen head',(0,0,1.8),(.43,.34,.34),c,'Head')
   for x in [-.19,.19]:
    shape('Eye socket',(x,-.30,1.87),(.16,.07,.16),'Teal','Head');shape('Ivory eye',(x,-.365,1.87),(.10,.03,.10),'Ivory','Head');shape('Pupil',(x,-.398,1.87),(.045,.012,.065),'Black','Head')
@@ -49,10 +57,13 @@ def build(name):
   for x in [-.3,0,.3]:shape('Specimen sprouts',(x,.04,2.17),(.09,.12,.22),'Green' if name=='Acolyte' else 'Violet','Head')
   shape('Chemical core',(0,-.34,1.15),(.18,.055,.24),'Glass')
  for side,x in [('L',-.22),('R',.22)]:
-  shape('Trouser '+side,(x,0,.64),(.16,.18,.20),'Teal','Leg.'+side)
-  shape('Lower trouser '+side,(x,0,.34),(.14,.16,.18),'Teal','Shin.'+side)
+  shape('Trouser '+side,(x,0,.78 if name!='Acolyte' else .64),(.15,.17,.24 if name!='Acolyte' else .20),'Teal','Leg.'+side)
+  shape('Lower trouser '+side,(x,0,.34),(.13,.15,.22 if name!='Acolyte' else .18),'Teal','Shin.'+side)
   shape('Boot '+side,(x,-.13,.15),(.19,.31,.16),'Teal','Foot.'+side,True)
   shape('Boot sole '+side,(x,-.13,.065),(.19,.31,.05),'Black','Foot.'+side,True)
+  if name!='Acolyte':
+   shape('Ivory toe cap '+side,(x,-.32,.13),(.16,.11,.07),'Ivory','Foot.'+side,True)
+   shape('Knee plate '+side,(x,-.17,.54),(.085,.04,.07),'Ivory' if name=='Hero' else 'Glass','Shin.'+side)
  for side,x in [('L',-.48),('R',.48)]:
   shape('Sleeve '+side,(x,0,1.36),(.16,.18,.17),'Ivory' if name=='Hero' else ('Green' if name=='Guardian' else 'Violet'),'Arm.'+side)
   shape('Cuff '+side,(x,0,1.10),(.14,.16,.17),'Ivory' if name=='Hero' else 'Teal','Forearm.'+side)
@@ -70,10 +81,10 @@ def build(name):
     bone.rotation_mode='XYZ';bone.rotation_euler=(0,0,0);bone.location=(0,0,0)
    if action_name in ['Running_A','Walking_A']:
     running=action_name=='Running_A'
-    stride_width=.34 if running else .23
+    stride_width=(.48 if running else .32) if name!='Acolyte' else (.34 if running else .23)
     if name=='Acolyte':stride_width*=.7
     bob=(1-math.cos(t*math.tau*2))*(.032 if running else .014)
-    root_height=(-.16 if running else -.04)+bob
+    root_height=(-.16 if running else -.075)+bob
     # Root bone's local Y is world up; local Z is world backward.
     rig.pose.bones['Root'].location.y=root_height
     for side,sign in [('L',1),('R',-1)]:
@@ -85,17 +96,19 @@ def build(name):
      # Authored two-segment solve: level boot, constant stance height,
      # linear backward stance travel and a lifted swing arc. No runtime IK.
      foot_y=stride*stride_width*(1.05 if name=='Guardian' and side=='L' else 1)
-     down=.68+root_height-knee*(.21 if running else .13)
-     bend=-math.acos(max(-1,min(1,(foot_y*foot_y+down*down-.36**2-.32**2)/(2*.36*.32))))
-     hip=math.atan2(foot_y,down)-math.atan2(.32*math.sin(bend),.36+.32*math.cos(bend))
+     upper,lower=(.45,.43) if name!='Acolyte' else (.36,.32)
+     foot_y=stride*stride_width
+     down=upper+lower+root_height-knee*(.24 if running else .16)
+     bend=-math.acos(max(-1,min(1,(foot_y*foot_y+down*down-upper**2-lower**2)/(2*upper*lower))))
+     hip=math.atan2(foot_y,down)-math.atan2(lower*math.sin(bend),upper+lower*math.cos(bend))
      rig.pose.bones['Leg.'+side].rotation_euler.x=hip
      rig.pose.bones['Shin.'+side].rotation_euler.x=bend
      rig.pose.bones['Foot.'+side].rotation_euler.x=-(hip+bend)
-     rig.pose.bones['Arm.'+side].rotation_euler.x=-stride*(.50 if running else .24)
-     rig.pose.bones['Forearm.'+side].rotation_euler.x=-.30 if running else -.12
+     rig.pose.bones['Arm.'+side].rotation_euler.x=-stride*(.68 if running else .38)+(-.28 if name=='Guardian' else 0)
+     rig.pose.bones['Forearm.'+side].rotation_euler.x=-.55 if name=='Guardian' else (-.42 if running else -.18)
      rig.pose.bones['Coat.'+side].rotation_euler.x=math.sin(t*math.tau-.65)*.26*sign
-    rig.pose.bones['Root'].location.x=wave*(.055 if name!='Acolyte' else .025)
-    rig.pose.bones['Body'].rotation_euler.x=.16 if running else .04
+    rig.pose.bones['Body'].location.x=wave*.025
+    rig.pose.bones['Body'].rotation_euler.x=(.23 if name=='Guardian' else .12) if running else (.16 if name=='Guardian' else .04)
     rig.pose.bones['Body'].rotation_euler.y=wave*(.12 if name=='Guardian' else .065)
     rig.pose.bones['Body'].rotation_euler.z=wave*.09
     rig.pose.bones['Satchel'].rotation_euler.x=math.sin(t*math.tau-.8)*.18
@@ -119,12 +132,12 @@ def build(name):
     rig.pose.bones['Satchel'].rotation_euler.z=-pulse*.20
    elif action_name=='Spellcast_Shoot':
     # Exact frame 6 / .10s release. Back cock -> extension -> recoil -> settle.
-    keys=[(0,.25),(.24,1.30),(.40,-1.35),(.64,-1.60),(1,0)]
+    keys=[(0,.3),(.16,1.45),(.32,1.45),(.40,-1.45),(.64,-1.65),(1,0)]
     angle=0
     for (a,av),(b,bv) in zip(keys,keys[1:]):
      if a<=t<=b:angle=av+(bv-av)*(t-a)/(b-a);break
     rig.pose.bones['Arm.R'].rotation_euler.x=angle
-    rig.pose.bones['Arm.R'].rotation_euler.z=-math.sin(t*math.pi)*.26
+    rig.pose.bones['Arm.R'].rotation_euler.z=-math.sin(t*math.pi)*.55
     rig.pose.bones['Forearm.R'].rotation_euler.x=-math.sin(min(t/.4,1)*math.pi)*1.15
     rig.pose.bones['Coat.R'].rotation_euler.x=math.sin(t*math.pi)*.18
    elif action_name=='Spellcasting':
@@ -138,6 +151,8 @@ def build(name):
     pulse=math.sin(t*math.pi)
     rig.pose.bones['Body'].rotation_euler.x=(-.25 if t<.55 else .38)*pulse
     rig.pose.bones['Arm.R'].rotation_euler.x=(-.7 if t>.55 else .6)*pulse
+    rig.pose.bones['Arm.L'].rotation_euler.x=-pulse*.45
+    rig.pose.bones['Forearm.R'].rotation_euler.x=(-.12 if t>.55 else -.8)*pulse
     rig.pose.bones['Head'].rotation_euler.x=pulse*.12
    elif action_name=='Hit_A':
     rig.pose.bones['Body'].rotation_euler.x=-math.sin(t*math.pi)*.42
@@ -161,4 +176,5 @@ def build(name):
  bpy.context.scene.render.fps=60;rig.animation_data.action=None
  bpy.ops.object.select_all(action='SELECT')
  bpy.ops.export_scene.fbx(filepath=str(out/(name+'.fbx')),use_selection=True,apply_scale_options='FBX_SCALE_ALL',axis_forward='-Z',axis_up='Y',add_leaf_bones=False,bake_anim=True,bake_anim_use_all_actions=True,bake_anim_use_nla_strips=False,bake_anim_simplify_factor=0,path_mode='STRIP')
-for name in ['Hero','Guardian','Acolyte']:build(name)
+requested=sys.argv[sys.argv.index('--')+2:]
+for name in requested or ['Hero','Guardian','Acolyte']:build(name)

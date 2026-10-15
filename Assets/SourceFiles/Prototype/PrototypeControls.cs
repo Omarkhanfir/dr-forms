@@ -14,7 +14,7 @@ namespace DrForms.Prototype
         public bool GameplayEnabled { get; private set; } = true;
         public bool InputReady => HasFocus && epoch == PrototypeBrowserInput.Epoch
             && !waitingForRelease && Time.frameCount > inputResumeFrame;
-        public const string BuildId = "DRFORMS-LAB-MOTION-4";
+        public const string BuildId = "DRFORMS-LAB-CORRECTION-5";
         public bool Started { get; private set; }
         public bool ManualPaused { get; private set; }
         public bool CanPlay => GameplayEnabled && Started && !ManualPaused && InputReady;
@@ -125,7 +125,7 @@ namespace DrForms.Prototype
             if (playerHealth != null)
             {
                 if (lastHealth != playerHealth.Health) { lastHealth = playerHealth.Health;
-                    healthLabel.text = "Health " + playerHealth.Health + " / " + playerHealth.MaximumHealth; }
+                    healthLabel.text = "HP " + playerHealth.Health + " / " + playerHealth.MaximumHealth; }
                 healthFill.rectTransform.anchorMax = new Vector2((float)playerHealth.Health / playerHealth.MaximumHealth, 1);
                 defeatPanel.gameObject.SetActive(playerHealth.IsDefeated || (waves != null && waves.Victory));
                 endTitle.text = playerHealth.IsDefeated ? "TRY AGAIN" : "QUEST COMPLETE";
@@ -153,6 +153,7 @@ namespace DrForms.Prototype
             }
             rewardLabel.gameObject.SetActive(Time.unscaledTime < rewardUntil && Started && GameplayEnabled && !ManualPaused);
             if (lastSafeArea != Screen.safeArea) UpdateSafeArea();
+            LayoutHUD();
             if (showedAttack == AttackActive) return;
             showedAttack = AttackActive;
             instruction.text = normalInstruction;
@@ -277,9 +278,8 @@ namespace DrForms.Prototype
             UpdateSafeArea();
             hud = Rect("Instructions", safeArea, new Vector2(0, 1), new Vector2(1, 1),
                 new Vector2(0, -18), new Vector2(-24, 28));
-            var panel = hud.gameObject.AddComponent<Image>();
-            panel.sprite = CourtyardArt.Panel; panel.type = Image.Type.Sliced; panel.color = new Color(1,1,1,.70f);
-            normalInstruction = TouchMode ? "DR.FORMS | Move + throw" : "DR.FORMS LAB | Mouse to move | Click to throw";
+            RoundedPanel(hud);
+            normalInstruction = TouchMode ? "Move + throw" : "Mouse to move · Click to throw";
             instruction = Label("Instructions Text", hud, normalInstruction, 14);
             circle = CreateCircle();
             var pad = Rect("Left Thumb Joystick", safeArea, Vector2.zero, Vector2.zero,
@@ -320,7 +320,7 @@ namespace DrForms.Prototype
             healthLabel = Label("Player Health Text", healthBar, "Health", 14);
             var waveBar = Rect("Wave Status", safeArea, new Vector2(0, 1), new Vector2(0, 1),
                 new Vector2(95, -115), new Vector2(170, 44));
-            var roomBack = waveBar.gameObject.AddComponent<Image>(); roomBack.sprite = CourtyardArt.Panel; roomBack.type = Image.Type.Sliced; roomBack.color = new Color(1,1,1,.88f); roomBack.raycastTarget = false;
+            RoundedPanel(waveBar);
             waveLabel = Label("Wave Text", waveBar, "Room 1 / 3", 16);
 
             defeatPanel = Rect("Defeat Screen", safeArea, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
@@ -375,7 +375,7 @@ namespace DrForms.Prototype
         private RectTransform MenuButton(string title, Transform parent, Vector2 anchor, Vector2 position, Vector2 size, UnityEngine.Events.UnityAction action)
         {
             var rect = Rect(title, parent, anchor, anchor, position, size);
-            var image = rect.gameObject.AddComponent<Image>(); image.sprite = CourtyardArt.Panel; image.type = Image.Type.Sliced; image.color = Color.white;
+            var image = RoundedPanel(rect); image.raycastTarget = true;
             Label(title + " Text", rect, title, 18);
             var button = rect.gameObject.AddComponent<PrototypeRestartButton>(); button.Owner = this; button.targetGraphic = image;
             button.onClick.AddListener(action);
@@ -407,6 +407,31 @@ namespace DrForms.Prototype
             lastSafeArea = Screen.safeArea;
             safeArea.anchorMin = new Vector2(lastSafeArea.xMin / Screen.width, lastSafeArea.yMin / Screen.height);
             safeArea.anchorMax = new Vector2(lastSafeArea.xMax / Screen.width, lastSafeArea.yMax / Screen.height);
+        }
+
+        internal static PrototypeRoundedGraphic RoundedPanel(RectTransform rect)
+        {
+            var graphic=rect.gameObject.AddComponent<PrototypeRoundedGraphic>();
+            graphic.color=new Color(.035f,.10f,.14f,.94f);
+            graphic.Shape(9,1,new Color(.25f,.43f,.48f,.8f));graphic.raycastTarget=false;return graphic;
+        }
+
+        private void LayoutHUD()
+        {
+            if(canvas==null||healthLabel==null||pauseButton==null)return;
+            float unit=PrototypeQuestions.CanvasPixelRatio/canvas.scaleFactor;
+            float width=safeArea.rect.width/unit;
+            void Place(RectTransform r,Vector2 anchor,float x,float y,float w,float h,int font=13){
+                if(r==null)return;r.anchorMin=r.anchorMax=anchor;r.anchoredPosition=new Vector2(x,y)*unit;r.sizeDelta=new Vector2(w,h)*unit;
+                var text=r.GetComponentInChildren<Text>();if(text!=null){text.fontSize=Mathf.RoundToInt(font*unit);text.resizeTextForBestFit=false;}
+            }
+            Place(pauseButton,new Vector2(0,1),46,-32,72,44);
+            Place(muteButton,new Vector2(1,1),-50,-32,80,44);
+            Place(healthLabel.transform.parent as RectTransform,new Vector2(.5f,1),0,-32,Mathf.Min(156,width-196),32);
+            Place(waveLabel.transform.parent as RectTransform,new Vector2(0,1),10+Mathf.Min(146,(width-30)/2)/2,-78,Mathf.Min(146,(width-30)/2),36,12);
+            Place(safeArea.Find("Question Progress") as RectTransform,new Vector2(1,1),-10-Mathf.Min(190,(width-30)/2)/2,-78,Mathf.Min(190,(width-30)/2),36,12);
+            Place(safeArea.Find("Grace Status") as RectTransform,new Vector2(.5f,1),0,-110,250,18,11);
+            Place(hud,new Vector2(.5f,0),0,24,TouchMode?Mathf.Max(90,width-260):280,28,TouchMode?11:13);
         }
 
         internal static RectTransform Rect(string name, Transform parent, Vector2 min, Vector2 max,

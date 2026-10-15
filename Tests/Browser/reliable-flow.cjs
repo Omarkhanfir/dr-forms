@@ -467,6 +467,44 @@ function passed(name, details) { result.checks.push({ name, details }); console.
     const d=await open(false);let s=await poll(d,x=>x.wave===1);
     // First run: guard regressions + keyboard + preserved retry mid-run.
     s=await clearWave(d,true);
+    if(process.env.DRFORMS_CAPTURE_SELECTIONS_ONLY==='1'){
+      const captures=[],sizes=[['phone',390,844],['tablet',1024,768],['desktop',1440,900],['phone-landscape',844,390]];
+      const capture=async(label,state)=>{
+        const file=`selection-${label}-${state}.png`;await d.page.mouse.move(5,5);await d.page.waitForTimeout(180);s=await d.snapshot();
+        const layout=s.questionLayout;
+        if(layout.rowGraphics){
+          assert(layout.rowGraphics.every(n=>n===3)&&layout.rowOutlines.every(n=>n===0),'Answer rows must have only boundary, indicator and text');
+          layout.buttons.forEach((b,i)=>{
+            const mark=layout.indicators[i],text=layout.textColumns[i];
+            assert(mark.x>=b.x+10&&mark.x+mark.width<text.x-5,'Indicator needs its own padded column');
+            assert(text.x+text.width<=b.x+b.width-10,'Text must respect inner padding');
+            assert(layout.textRequiredHeight[i]<=layout.textAreaHeight[i]+2,'Wrapped text clipped');
+          });
+          const overflow=layout.buttons.at(-1).y+layout.buttons.at(-1).height-layout.buttons[0].y>layout.viewport.height;
+          assert(layout.helpText.startsWith('Scroll')===overflow,'Scroll help must reflect actual overflow');
+        }
+        await d.page.screenshot({path:path.join(artifacts,file)});
+        const box=await d.page.locator('#unity-canvas').boundingBox(),p=s.questionLayout.paper;
+        await d.page.screenshot({path:path.join(artifacts,`close-${file}`),clip:{x:box.x+p.x,y:box.y+p.y,width:p.width,height:p.height}});
+        captures.push({file,state:s.selectedAnswer,layout:s.questionLayout,camera:s.camera});
+      };
+      for(const [label,width,height] of sizes){await d.page.setViewportSize({width,height});await d.page.waitForTimeout(450);await capture(label,'none');}
+      for(const [label,width,height] of sizes){
+        await d.page.setViewportSize({width,height});await d.page.waitForTimeout(450);s=await d.snapshot();
+        await d.page.keyboard.press('ArrowUp',{delay:65});await d.page.keyboard.press('ArrowUp',{delay:65});
+        for(let index=0;index<3;index++){
+          if(index>0)await d.page.keyboard.press('ArrowDown',{delay:65});await d.page.waitForTimeout(150);s=await d.snapshot();
+          const b=s.questionLayout.buttons[index],v=s.questionLayout.viewport,ratio=s.questionLayout.pixelRatio;
+          const top=Math.max(b.y,v.y)+4,bottom=Math.min(b.y+b.height,v.y+v.height)-4;
+          assert(bottom>top,'Keyboard focus must reveal part of the target answer');
+          s=await click(d,s,{x:(b.x+b.width*.65)*ratio,y:s.screenHeight-(top+bottom)*.5*ratio});
+          assert(s.selectedAnswer===index&&s.answers.length===0&&s.questionPaused);
+          await capture(label,index);
+        }
+      }
+      fs.writeFileSync(path.join(artifacts,'selection-captures.json'),JSON.stringify(captures,null,2));
+      passed('All three selected states and unselected rows captured at four sizes without submitting');await d.context.close();return;
+    }
     if(process.env.DRFORMS_CAPTURE_QUESTION_LAYOUT_ONLY==='1'){
       const longContent=process.env.DRFORMS_LAYOUT_LONG==='1',captures=[];
       for(const [label,width,height] of [['phone',390,844],['phone-landscape',844,390],['tablet',1024,768],['desktop',1440,900],['phone-small',320,568]]){
